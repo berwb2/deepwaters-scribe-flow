@@ -12,6 +12,16 @@ import { getUserProfile, updateUserProfile, signOut, resetPassword } from '@/lib
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, LogOut, User } from 'lucide-react';
 
+// Define the profile type
+interface UserProfile {
+  id: string;
+  display_name: string;
+  created_at: string;
+  avatar_url: string | null;
+  settings: any;
+  email?: string; // Make email optional to match the returned profile type
+}
+
 const AccountSettings = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
@@ -20,8 +30,8 @@ const AccountSettings = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
-  // Fetch user profile
-  const { data: profile, isLoading: isLoadingProfile } = useQuery({
+  // Fetch user profile with updated type
+  const { data: profile, isLoading: isLoadingProfile } = useQuery<UserProfile>({
     queryKey: ['userProfile'],
     queryFn: getUserProfile
   });
@@ -44,6 +54,7 @@ const AccountSettings = () => {
     setIsLoading(true);
     try {
       await updateUserProfile({ display_name: displayName });
+      toast.success("Profile updated successfully");
       setIsLoading(false);
     } catch (error) {
       // Error is handled in updateUserProfile function
@@ -168,7 +179,7 @@ const AccountSettings = () => {
                 
                 <div className="space-y-2">
                   <Label>Email</Label>
-                  <Input value={profile.email} disabled />
+                  <Input value={profile?.email || ''} disabled />
                   <p className="text-xs text-muted-foreground">Email address cannot be changed</p>
                 </div>
               </CardContent>

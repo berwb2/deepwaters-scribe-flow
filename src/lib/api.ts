@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 
@@ -95,24 +94,30 @@ export async function getCurrentUser() {
   }
 }
 
-export async function getUserProfile() {
+export const getUserProfile = async () => {
   try {
-    const user = await getCurrentUser();
-    if (!user) return null;
-
-    const { data, error } = await supabase
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      throw new Error('Not authenticated');
+    }
+    
+    const { data: profile, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('id', user.id)
+      .eq('id', session.user.id)
       .single();
-
+    
     if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error("Error fetching user profile:", error);
-    return null;
+    
+    // Return profile with email from auth user
+    return { ...profile, email: session.user.email };
+    
+  } catch (error: any) {
+    toast.error(error.message || 'Failed to fetch profile');
+    throw error;
   }
-}
+};
 
 export async function updateUserProfile(updates: any) {
   try {

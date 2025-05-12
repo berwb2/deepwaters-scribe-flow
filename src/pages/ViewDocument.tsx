@@ -69,10 +69,15 @@ const ViewDocument = () => {
   const handleDownload = () => {
     if (!document) return;
     
+    // Create a blob with the document content
+    const blob = new Blob([document.content], {type: 'text/plain'});
+    
+    // Create a temporary anchor element for downloading
     const element = document.createElement('a');
-    const file = new Blob([document.content], {type: 'text/plain'});
-    element.href = URL.createObjectURL(file);
+    element.href = URL.createObjectURL(blob);
     element.download = `${document.title}.md`;
+    
+    // Append to the document, click, and clean up
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
