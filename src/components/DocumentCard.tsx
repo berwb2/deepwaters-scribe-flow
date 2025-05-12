@@ -3,18 +3,22 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { File } from 'lucide-react';
+import { File, Calendar } from 'lucide-react';
 
 export type DocType = 'plan' | 'doctrine' | 'reflection';
 
 export interface DocumentMeta {
   id: string;
   title: string;
-  excerpt: string;
-  type: DocType;
-  tags: string[];
-  lastEdited: string;
-  wordCount: number;
+  excerpt?: string;
+  content?: string;
+  type?: DocType;
+  content_type?: string;
+  tags?: string[];
+  lastEdited?: string;
+  updated_at?: string;
+  wordCount?: number;
+  metadata?: any;
 }
 
 interface DocumentCardProps {
@@ -22,7 +26,7 @@ interface DocumentCardProps {
 }
 
 const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
-  const getTypeColor = (type: DocType) => {
+  const getTypeColor = (type: string) => {
     switch (type) {
       case 'plan':
         return 'bg-water hover:bg-water-deep';
@@ -35,16 +39,36 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
     }
   };
 
+  // Generate excerpt from content if not provided
+  const excerpt = document.excerpt || (document.content ? document.content.substring(0, 150) + '...' : 'No content available');
+  
+  // Calculate word count if not provided
+  const wordCount = document.wordCount || (document.content ? document.content.split(/\s+/).filter(Boolean).length : 0);
+  
+  // Format the date
+  const lastEdited = document.lastEdited || (document.updated_at ? 
+    new Date(document.updated_at).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }) : 'Unknown date');
+  
+  // Determine document type
+  const docType = document.type || document.content_type;
+
   return (
     <Link to={`/documents/${document.id}`}>
       <Card className="h-full transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
         <CardHeader className="pb-3">
           <div className="flex justify-between items-start">
-            <Badge className={`${getTypeColor(document.type)}`}>
-              {document.type.charAt(0).toUpperCase() + document.type.slice(1)}
-            </Badge>
-            <div className="text-xs text-muted-foreground">
-              {document.lastEdited}
+            {docType && (
+              <Badge className={`${getTypeColor(docType)}`}>
+                {docType.charAt(0).toUpperCase() + docType.slice(1)}
+              </Badge>
+            )}
+            <div className="text-xs text-muted-foreground flex items-center">
+              <Calendar className="h-3 w-3 mr-1" />
+              {lastEdited}
             </div>
           </div>
           <div className="font-serif font-medium text-xl mt-2 line-clamp-2">
@@ -53,17 +77,17 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
         </CardHeader>
         <CardContent className="pb-4">
           <p className="text-muted-foreground line-clamp-3">
-            {document.excerpt}
+            {excerpt}
           </p>
         </CardContent>
         <CardFooter className="pt-0 flex justify-between items-center">
           <div className="flex flex-wrap gap-2">
-            {document.tags.slice(0, 3).map(tag => (
-              <Badge key={tag} variant="outline" className="text-xs">
+            {document.tags && document.tags.slice(0, 3).map((tag, index) => (
+              <Badge key={index} variant="outline" className="text-xs">
                 {tag}
               </Badge>
             ))}
-            {document.tags.length > 3 && (
+            {document.tags && document.tags.length > 3 && (
               <Badge variant="outline" className="text-xs">
                 +{document.tags.length - 3}
               </Badge>
@@ -71,7 +95,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({ document }) => {
           </div>
           <div className="flex items-center text-xs text-muted-foreground">
             <File className="mr-1 h-3 w-3" />
-            {document.wordCount} words
+            {wordCount} words
           </div>
         </CardFooter>
       </Card>

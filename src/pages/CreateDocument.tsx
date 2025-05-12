@@ -1,127 +1,203 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import Navbar from '@/components/Navbar';
-import { toast } from '@/components/ui/sonner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
 import { DocType } from '@/components/DocumentCard';
+import { Badge } from '@/components/ui/badge';
+import { X } from 'lucide-react';
+import { createDocument } from '@/lib/api';
+import { toast } from '@/components/ui/sonner';
 
 const CreateDocument = () => {
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [tags, setTags] = useState('');
   const [documentType, setDocumentType] = useState<DocType>('plan');
+  const [tag, setTag] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!title.trim()) {
-      toast.error('Please enter a document title');
-      return;
+  
+  // Handle tag addition
+  const handleAddTag = () => {
+    if (!tag.trim() || tags.includes(tag.trim())) return;
+    setTags([...tags, tag.trim()]);
+    setTag('');
+  };
+  
+  // Handle tag removal
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags(tags.filter(t => t !== tagToRemove));
+  };
+  
+  // Handle tag input keydown (add on Enter)
+  const handleTagKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddTag();
     }
-    
-    if (!content.trim()) {
-      toast.error('Please enter some content');
+  };
+  
+  // Handle document creation
+  const handleCreateDocument = async () => {
+    if (!title.trim() || !content.trim()) {
+      toast.error('Please provide both title and content');
       return;
     }
     
     setIsProcessing(true);
     
-    // Simulate processing delay
-    setTimeout(() => {
-      // In a real app, this would save to Supabase
-      toast.success('Document created successfully!');
+    try {
+      // Create the document
+      const documentId = await createDocument(
+        title,
+        content,
+        documentType,
+        false, // not a template
+        { tags } // metadata
+      );
+      
+      toast.success('Document created successfully');
+      navigate(`/documents/${documentId}`);
+    } catch (error) {
+      // Error is handled in the createDocument function
       setIsProcessing(false);
-      navigate('/documents/1');
-    }, 1500);
+    }
   };
-
+  
+  // Preview section that shows how the document will look
+  const previewContent = () => {
+    if (!content) return <p className="text-muted-foreground text-center italic">Your content preview will appear here</p>;
+    
+    // Basic formatting for preview
+    let preview = content;
+    
+    // Format headings
+    preview = preview.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+    preview = preview.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+    preview = preview.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+    
+    // Format lists
+    preview = preview.replace(/^\* (.+)$/gm, '<li>$1</li>');
+    preview = preview.replace(/(<li>.+<\/li>)\n(<li>.+<\/li>)/g, '<ul>$1$2</ul>');
+    
+    // Format paragraphs (any line that's not a heading or list)
+    preview = preview.replace(/^([^<\n].+)$/gm, '<p>$1</p>');
+    
+    return <div dangerouslySetInnerHTML={{ __html: preview }} />;
+  };
+  
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
       
       <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-3xl font-serif font-medium mb-6">Create New Document</h1>
-          
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <h1 className="text-3xl font-serif font-medium mb-6">Create New Document</h1>
+        
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Input Section */}
+          <div className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="title">Document Title</Label>
               <Input
                 id="title"
-                placeholder="Enter a title for your document"
+                placeholder="Enter document title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="input-field"
               />
             </div>
             
             <div className="space-y-2">
-              <Label>Document Type</Label>
-              <RadioGroup 
+              <Label htmlFor="type">Document Type</Label>
+              <Select 
                 value={documentType} 
                 onValueChange={(value) => setDocumentType(value as DocType)}
-                className="flex flex-wrap gap-4"
               >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="plan" id="plan" />
-                  <Label htmlFor="plan" className="cursor-pointer">Plan</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="doctrine" id="doctrine" />
-                  <Label htmlFor="doctrine" className="cursor-pointer">Doctrine</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="reflection" id="reflection" />
-                  <Label htmlFor="reflection" className="cursor-pointer">Reflection</Label>
-                </div>
-              </RadioGroup>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="content">Document Content</Label>
-              <Textarea
-                id="content"
-                placeholder="Paste or write your content here (up to 8,000 words)..."
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="input-field min-h-[300px]"
-              />
-              <p className="text-sm text-muted-foreground">
-                {content.split(/\s+/).filter(Boolean).length} words
-              </p>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select document type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="plan">Plan</SelectItem>
+                  <SelectItem value="doctrine">Doctrine</SelectItem>
+                  <SelectItem value="reflection">Reflection</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
             <div className="space-y-2">
               <Label htmlFor="tags">Tags</Label>
-              <Input
-                id="tags"
-                placeholder="Add tags separated by commas (e.g., business, strategy, growth)"
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-                className="input-field"
-              />
+              <div className="flex gap-2">
+                <Input
+                  id="tags"
+                  placeholder="Add tags"
+                  value={tag}
+                  onChange={(e) => setTag(e.target.value)}
+                  onKeyDown={handleTagKeyDown}
+                />
+                <Button type="button" onClick={handleAddTag}>Add</Button>
+              </div>
+              
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {tags.map((t) => (
+                    <Badge key={t} variant="secondary" className="flex items-center gap-1">
+                      {t}
+                      <button 
+                        onClick={() => handleRemoveTag(t)} 
+                        className="rounded-full hover:bg-muted p-1"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
             </div>
             
-            <div className="flex justify-end space-x-4 pt-4">
-              <Button type="button" variant="outline" onClick={() => navigate('/documents')}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isProcessing}>
-                {isProcessing ? 'Creating...' : 'Create Document'}
-              </Button>
+            <div className="space-y-2">
+              <Label htmlFor="content">Content</Label>
+              <Textarea
+                id="content"
+                placeholder="Write or paste your document content here..."
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                className="h-64 font-mono"
+              />
+              <p className="text-sm text-muted-foreground">
+                You can use Markdown formatting: # Heading, ## Subheading, * List item
+              </p>
             </div>
-          </form>
+            
+            <Button 
+              onClick={handleCreateDocument}
+              disabled={isProcessing || !title || !content}
+              className="w-full md:w-auto"
+            >
+              {isProcessing ? 'Creating...' : 'Create Document'}
+            </Button>
+          </div>
+          
+          {/* Preview Section */}
+          <div>
+            <h2 className="text-xl font-medium mb-4">Preview</h2>
+            <Card className="overflow-hidden">
+              <CardContent className="p-6">
+                {title && <h1 className="text-2xl font-serif font-medium mb-4">{title}</h1>}
+                <div className="prose prose-blue max-w-none">
+                  {previewContent()}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </main>
       
-      <footer className="py-6 border-t">
+      <footer className="py-6 border-t mt-12">
         <div className="container mx-auto px-4 text-center text-muted-foreground">
           © {new Date().getFullYear()} DeepWaters. All rights reserved.
         </div>

@@ -1,33 +1,39 @@
 
 import React, { useRef, useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import TableOfContents from '@/components/TableOfContents';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DocType } from '@/components/DocumentCard';
-import { ArrowLeft, Download, File, Info } from 'lucide-react';
+import { ArrowLeft, Download, File, Info, Trash } from 'lucide-react';
+import { getDocument, deleteDocument, getDocumentTags, detectTables } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
+import { toast } from '@/components/ui/sonner';
 
 const ViewDocument = () => {
   const { id } = useParams<{ id: string }>();
   const contentRef = useRef<HTMLDivElement>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
   
-  // Sample document data
-  const [document, setDocument] = useState<{
-    id: string;
-    title: string;
-    content: string;
-    type: DocType;
-    tags: string[];
-    lastEdited: string;
-    formattedContent: string;
-  } | null>(null);
+  // Fetch the document using React Query
+  const { data: document, isLoading, error } = useQuery({
+    queryKey: ['document', id],
+    queryFn: () => id ? getDocument(id) : Promise.reject('No document ID provided'),
+    enabled: !!id,
+  });
+  
+  // Fetch document tags
+  const { data: tags = [] } = useQuery({
+    queryKey: ['documentTags', id],
+    queryFn: () => id ? getDocumentTags(id) : Promise.reject('No document ID provided'),
+    enabled: !!id,
+  });
   
   // Format the document content
   const formatContent = (content: string) => {
-    // This is a simple formatter. In a real app, you'd use a more sophisticated formatter
-    let formatted = content;
+    // First detect and format tables
+    let formatted = detectTables(content);
     
     // Format headings
     formatted = formatted.replace(/^# (.+)$/gm, '<h1 id="$1">$1</h1>');
@@ -38,119 +44,39 @@ const ViewDocument = () => {
     formatted = formatted.replace(/^\* (.+)$/gm, '<li>$1</li>');
     formatted = formatted.replace(/(<li>.+<\/li>)\n(<li>.+<\/li>)/g, '<ul>$1$2</ul>');
     
-    // Format paragraphs (any line that's not a heading or list)
+    // Format paragraphs (any line that's not a heading, list or table)
     formatted = formatted.replace(/^([^<\n].+)$/gm, '<p>$1</p>');
     
     return formatted;
   };
-  
-  // Load document data
-  useEffect(() => {
-    setIsLoading(true);
+
+  const handleDeleteDocument = async () => {
+    if (!id) return;
     
-    // In a real app, you would fetch this from Supabase
-    // Simulating API call with timeout
-    setTimeout(() => {
-      const sampleData = {
-        id: id || '1',
-        title: 'Strategic Business Plan 2025',
-        type: 'plan' as DocType,
-        tags: ['business', 'strategy', 'growth'],
-        lastEdited: 'May 10, 2025',
-        content: `# Strategic Business Plan 2025
-
-## Executive Summary
-
-This is a comprehensive five-year business strategy outlining growth targets, market positioning, and operational excellence initiatives.
-
-## Market Analysis
-
-### Current Market Position
-Our company currently holds approximately 15% market share in our primary sector. Competitor analysis indicates opportunities for growth in emerging markets.
-
-### Target Demographics
-* Young professionals (25-40)
-* Small to medium enterprises
-* Tech-forward organizations
-
-## Growth Strategy
-
-### Revenue Targets
-We aim to increase revenue by 30% over the next three years through the following initiatives:
-
-* Expansion into international markets
-* Development of subscription-based service models
-* Strategic acquisitions in complementary sectors
-
-### Product Development
-Our product roadmap prioritizes innovation in three key areas:
-
-1. AI-enhanced customer experiences
-2. Sustainability features
-3. Integration capabilities with emerging technologies
-
-## Operational Excellence
-
-### Team Structure
-As we scale, our organizational structure will evolve to support:
-
-* Cross-functional product teams
-* Dedicated innovation department
-* Enhanced customer success operations
-
-### Key Performance Indicators
-We will measure success through:
-
-* Customer lifetime value
-* Retention metrics
-* Innovation output
-* Operational efficiency
-
-## Risk Assessment
-
-### Market Risks
-* Economic downturn scenarios
-* Competitive disruption
-* Regulatory changes
-
-### Mitigation Strategies
-Maintaining financial flexibility and diversifying revenue streams will be key to navigating potential market challenges.
-
-## Financial Projections
-
-### Five-Year Forecast
-Based on our growth initiatives and market analysis, we project:
-
-* Year 1: 15% growth
-* Year 2: 22% growth
-* Year 3: 30% growth
-* Year 4: 28% growth
-* Year 5: 25% growth
-
-## Implementation Timeline
-
-### Phase One (2025)
-Focus on strengthening core offerings and establishing operational foundations for growth.
-
-### Phase Two (2026-2027)
-Accelerate market expansion and launch key innovation initiatives.
-
-### Phase Three (2028-2030)
-Scale successful operations and pursue strategic acquisition opportunities.
-
-## Conclusion
-
-This strategic plan provides a framework for sustainable growth while maintaining our commitment to innovation and customer value. Regular quarterly reviews will ensure we remain adaptable to changing market conditions.`
-      };
-      
-      setDocument({
-        ...sampleData,
-        formattedContent: formatContent(sampleData.content)
-      });
-      
-      setIsLoading(false);
-    }, 1000);
-  }, [id]);
+    if (window.confirm('Are you sure you want to delete this document? This cannot be undone.')) {
+      try {
+        await deleteDocument(id);
+        toast.success('Document deleted successfully');
+        navigate('/documents');
+      } catch (error) {
+        // Error is handled in the API function
+        console.error('Failed to delete document:', error);
+      }
+    }
+  };
+  
+  // Handle document download
+  const handleDownload = () => {
+    if (!document) return;
+    
+    const element = document.createElement('a');
+    const file = new Blob([document.content], {type: 'text/plain'});
+    element.href = URL.createObjectURL(file);
+    element.download = `${document.title}.md`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
   
   if (isLoading) {
     return (
@@ -166,7 +92,7 @@ This strategic plan provides a framework for sustainable growth while maintainin
     );
   }
   
-  if (!document) {
+  if (error || !document) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
@@ -184,6 +110,19 @@ This strategic plan provides a framework for sustainable growth while maintainin
     );
   }
   
+  // Prepare formatted content
+  const formattedContent = formatContent(document.content);
+  
+  // Calculate word count
+  const wordCount = document.content.split(/\s+/).filter(Boolean).length;
+  
+  // Format the date
+  const lastEdited = new Date(document.updated_at).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -199,11 +138,11 @@ This strategic plan provides a framework for sustainable growth while maintainin
             </Button>
             
             <Badge className="mr-2">
-              {document.type.charAt(0).toUpperCase() + document.type.slice(1)}
+              {document.content_type.charAt(0).toUpperCase() + document.content_type.slice(1)}
             </Badge>
             
             <span className="text-sm text-muted-foreground ml-auto">
-              Last edited: {document.lastEdited}
+              Last edited: {lastEdited}
             </span>
           </div>
           
@@ -216,9 +155,9 @@ This strategic plan provides a framework for sustainable growth while maintainin
               <div className="mb-6 pb-6 border-b">
                 <h1 className="text-3xl md:text-4xl font-serif font-medium mb-4">{document.title}</h1>
                 <div className="flex flex-wrap gap-2">
-                  {document.tags.map(tag => (
-                    <Badge key={tag} variant="outline">
-                      {tag}
+                  {tags.map(tag => (
+                    <Badge key={tag.id} variant="outline">
+                      {tag.tag_name}
                     </Badge>
                   ))}
                 </div>
@@ -227,17 +166,23 @@ This strategic plan provides a framework for sustainable growth while maintainin
               <div 
                 ref={contentRef}
                 className="prose prose-blue max-w-none"
-                dangerouslySetInnerHTML={{ __html: document.formattedContent }}
+                dangerouslySetInnerHTML={{ __html: formattedContent }}
               />
               
               <div className="mt-12 pt-6 border-t flex justify-between items-center">
                 <div className="text-sm text-muted-foreground">
-                  <span>{document.content.split(/\s+/).filter(Boolean).length} words</span>
+                  <span>{wordCount} words</span>
                 </div>
-                <Button variant="outline" size="sm">
-                  <Download className="mr-2 h-4 w-4" />
-                  Download
-                </Button>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={handleDownload}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600" onClick={handleDeleteDocument}>
+                    <Trash className="mr-2 h-4 w-4" />
+                    Delete
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

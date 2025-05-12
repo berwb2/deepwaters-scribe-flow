@@ -2,11 +2,30 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Logo from './Logo';
-import { Menu } from 'lucide-react';
+import { FileText, LogOut, Menu, Plus, Settings, User } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { getCurrentUser, signOut } from '@/lib/api';
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
+  
+  // Get current user
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: getCurrentUser,
+  });
+
+  // Handle sign out
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      // The page will reload due to auth state change
+    } catch (error) {
+      // Error is handled in signOut function
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-md border-b border-border">
@@ -36,11 +55,47 @@ const Navbar: React.FC = () => {
           <Link to="/create" className="text-foreground hover:text-water-deep transition-colors">
             Create New
           </Link>
-          <Button asChild>
-            <Link to="/start">
-              Start Planning
-            </Link>
-          </Button>
+          
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <User className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <div className="flex items-center justify-start gap-2 p-2">
+                  <div className="flex flex-col space-y-1 leading-none">
+                    <p className="font-medium">{user.email}</p>
+                  </div>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to="/documents" className="cursor-pointer">
+                    <FileText className="mr-2 h-4 w-4" />
+                    <span>My Documents</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/account" className="cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Account Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button asChild>
+              <Link to="/login">
+                Sign In
+              </Link>
+            </Button>
+          )}
         </nav>
         
         {isMenuOpen && (
@@ -67,15 +122,43 @@ const Navbar: React.FC = () => {
               >
                 Create New
               </Link>
-              <Button 
-                className="w-full" 
-                asChild
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Link to="/start">
-                  Start Planning
-                </Link>
-              </Button>
+              
+              {user ? (
+                <>
+                  <div className="py-2 text-sm text-muted-foreground">
+                    Signed in as: {user.email}
+                  </div>
+                  <Link
+                    to="/account"
+                    className="text-foreground hover:text-water-deep transition-colors py-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Settings className="inline-block mr-2 h-4 w-4" />
+                    Account Settings
+                  </Link>
+                  <Button
+                    variant="outline"
+                    className="justify-start"
+                    onClick={() => {
+                      handleSignOut();
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </Button>
+                </>
+              ) : (
+                <Button 
+                  className="w-full"
+                  asChild
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Link to="/login">
+                    Sign In
+                  </Link>
+                </Button>
+              )}
             </div>
           </div>
         )}

@@ -9,13 +9,216 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      collection_documents: {
+        Row: {
+          added_at: string
+          collection_id: string
+          document_id: string
+        }
+        Insert: {
+          added_at?: string
+          collection_id: string
+          document_id: string
+        }
+        Update: {
+          added_at?: string
+          collection_id?: string
+          document_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_documents_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "document_collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_documents_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_collections: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      document_tags: {
+        Row: {
+          document_id: string
+          id: string
+          tag_name: string
+        }
+        Insert: {
+          document_id: string
+          id?: string
+          tag_name: string
+        }
+        Update: {
+          document_id?: string
+          id?: string
+          tag_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_tags_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_versions: {
+        Row: {
+          content: string
+          created_at: string
+          document_id: string
+          id: string
+          version_number: number
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          document_id: string
+          id?: string
+          version_number: number
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          document_id?: string
+          id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          content: string
+          content_type: string
+          created_at: string
+          id: string
+          is_template: boolean | null
+          metadata: Json | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          content_type: string
+          created_at?: string
+          id?: string
+          is_template?: boolean | null
+          metadata?: Json | null
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          content_type?: string
+          created_at?: string
+          id?: string
+          is_template?: boolean | null
+          metadata?: Json | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          display_name: string | null
+          id: string
+          settings: Json | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id: string
+          settings?: Json | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          display_name?: string | null
+          id?: string
+          settings?: Json | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_document: {
+        Args: {
+          p_title: string
+          p_content: string
+          p_content_type: string
+          p_is_template?: boolean
+          p_metadata?: Json
+        }
+        Returns: string
+      }
+      get_document_versions: {
+        Args: { p_document_id: string }
+        Returns: {
+          id: string
+          content: string
+          created_at: string
+          version_number: number
+        }[]
+      }
+      update_document: {
+        Args: {
+          p_document_id: string
+          p_title?: string
+          p_content?: string
+          p_content_type?: string
+          p_is_template?: boolean
+          p_metadata?: Json
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
