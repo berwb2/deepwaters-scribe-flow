@@ -9,7 +9,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Trophy, Award, Medal } from 'lucide-react';
+import { Trophy, Award, Medal, Crown, Star } from 'lucide-react';
 
 interface LeaderboardUser {
   id: string;
@@ -33,13 +33,23 @@ const mockLeaderboard: LeaderboardUser[] = [
 const LeaderboardDialog: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   
+  // Return appropriate medal icon based on position
+  const getMedalIcon = (position: number) => {
+    switch (position) {
+      case 0: return <Crown className="h-5 w-5 text-amber-400" />;
+      case 1: return <Medal className="h-5 w-5 text-slate-400" />;
+      case 2: return <Medal className="h-5 w-5 text-amber-700" />;
+      default: return <Star className="h-5 w-5 text-water-deep" />;
+    }
+  };
+  
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button 
           variant="outline" 
           size="sm" 
-          className="gap-2 group"
+          className="gap-2 group border-water-light hover:border-water-deep hover:bg-blue-50"
           onClick={() => setIsOpen(true)}
         >
           <Trophy className="h-4 w-4 text-amber-500 group-hover:scale-110 transition-transform" />
@@ -47,12 +57,18 @@ const LeaderboardDialog: React.FC = () => {
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
+        <div className="absolute -z-10 inset-0 overflow-hidden rounded-lg">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-water-light/30 rounded-full"></div>
+          <div className="absolute -bottom-20 -left-40 w-60 h-60 bg-blue-100/40 rounded-full"></div>
+        </div>
+        
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-amber-500" />
-            Achievements Leaderboard
+          <DialogTitle className="flex items-center gap-2 text-2xl colored-heading">
+            <Trophy className="h-6 w-6 text-amber-500" />
+            Leaderboard
           </DialogTitle>
-          <DialogDescription>
+          <div className="color-line w-24"></div>
+          <DialogDescription className="text-center pt-2">
             See how you rank compared to other users
           </DialogDescription>
         </DialogHeader>
@@ -69,22 +85,25 @@ const LeaderboardDialog: React.FC = () => {
           {mockLeaderboard.map((user, index) => (
             <div 
               key={user.id} 
-              className={`flex items-center justify-between py-2 ${
-                user.name === 'Current User' ? 'bg-primary/5 -mx-2 px-2 rounded-md' : ''
+              className={`flex items-center justify-between py-3 px-2 rounded-lg transition-all duration-200 ${
+                user.name === 'Current User' 
+                  ? 'bg-water-light/20 border border-water-light/50 shadow-sm' 
+                  : 'hover:bg-blue-50'
               }`}
             >
               <div className="flex items-center">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium mr-3
-                  ${index === 0 ? 'bg-amber-100 text-amber-800' : 
-                    index === 1 ? 'bg-slate-100 text-slate-800' : 
-                    index === 2 ? 'bg-amber-700/60 text-amber-100' : 'bg-muted text-muted-foreground'}`
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium mr-3
+                  ${index === 0 ? 'bg-gradient-to-br from-amber-300 to-amber-500 text-white shadow-md' : 
+                    index === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-white' : 
+                    index === 2 ? 'bg-gradient-to-br from-amber-700/80 to-amber-800 text-amber-100' : 'bg-muted text-muted-foreground'}`
                 }>
                   {index + 1}
                 </div>
                 <div>
-                  <div className="font-medium">
+                  <div className="font-medium flex items-center gap-1">
                     {user.name}
-                    {user.name === 'Current User' && <span className="text-xs text-muted-foreground ml-2">(You)</span>}
+                    {index < 3 && getMedalIcon(index)}
+                    {user.name === 'Current User' && <span className="text-xs text-water-deep ml-2 px-1.5 py-0.5 bg-blue-100 rounded-full">(You)</span>}
                   </div>
                   <div className="text-xs text-muted-foreground flex items-center gap-2">
                     <span className="flex items-center">
@@ -103,10 +122,12 @@ const LeaderboardDialog: React.FC = () => {
               
               <div className="flex items-center gap-8">
                 <div className="text-center">
-                  <span className="font-semibold">{user.level}</span>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-water to-water-deep text-white flex items-center justify-center text-sm font-bold">
+                    {user.level}
+                  </div>
                 </div>
                 <div className="text-right w-16">
-                  <span>{user.xp.toLocaleString()}</span>
+                  <span className="font-semibold text-water-deep">{user.xp.toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -114,7 +135,10 @@ const LeaderboardDialog: React.FC = () => {
         </div>
         
         <div className="flex justify-center mt-4">
-          <Button variant="outline" className="w-full" onClick={() => setIsOpen(false)}>
+          <Button 
+            className="w-full bg-gradient-to-r from-water-deep to-water hover:from-water hover:to-water-deep text-white"
+            onClick={() => setIsOpen(false)}
+          >
             Close
           </Button>
         </div>

@@ -126,4 +126,40 @@
   .wave-top {
     @apply w-full overflow-hidden leading-[0];
   }
+  
+  /* New colored heading class */
+  .colored-heading {
+    @apply bg-gradient-to-r from-water-deep to-blue-400 bg-clip-text text-transparent;
+  }
+  
+  /* Color divider line */
+  .color-line {
+    @apply h-1 bg-gradient-to-r from-water-deep via-water to-water-light rounded-full my-4;
+  }
+  
+  /* Card with color accent */
+  .accent-card {
+    @apply relative overflow-hidden rounded-xl bg-white border border-water-light shadow-lg;
+  }
+  
+  .accent-card::before {
+    content: '';
+    @apply absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-water-deep to-water;
+  }
+  
+  /* Animated water background */
+  .water-bg {
+    @apply relative bg-gradient-to-br from-blue-50 to-blue-100;
+  }
+  
+  .water-bg::after {
+    content: '';
+    @apply absolute inset-0 bg-[url('/water-texture.svg')] opacity-5 pointer-events-none;
+    animation: water-move 20s ease-in-out infinite alternate;
+  }
+  
+  @keyframes water-move {
+    0% { transform: translateY(0) scale(1); }
+    100% { transform: translateY(-10px) scale(1.05); }
+  }
 }

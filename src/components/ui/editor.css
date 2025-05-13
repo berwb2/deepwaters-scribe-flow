@@ -9,7 +9,7 @@
 }
 
 .ProseMirror h1 {
-  @apply text-3xl font-serif font-medium text-water-deep my-4;
+  @apply text-3xl font-serif font-medium bg-gradient-to-r from-water-deep to-blue-400 bg-clip-text text-transparent my-4;
 }
 
 .ProseMirror h2 {
@@ -37,7 +37,7 @@
 }
 
 .ProseMirror pre {
-  @apply bg-gray-800 text-gray-100 rounded p-3 my-4 overflow-x-auto;
+  @apply bg-gray-800 text-gray-100 rounded-lg p-3 my-4 overflow-x-auto shadow-md;
 }
 
 .ProseMirror pre code {
@@ -51,18 +51,18 @@
 
 /* Code block styles */
 .code-block {
-  @apply bg-gray-900 text-gray-100 rounded-md p-4 my-4 overflow-x-auto;
+  @apply bg-gray-900 text-gray-100 rounded-md p-4 my-4 overflow-x-auto border-l-4 border-water-deep;
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 }
 
 /* Internal link styles */
 .internal-link {
-  @apply text-water-deep underline underline-offset-2 hover:text-water transition-colors;
+  @apply text-water-deep underline underline-offset-2 decoration-water-light decoration-2 hover:text-water transition-colors;
 }
 
 /* Bubble menu styles */
 .bubble-menu {
-  @apply flex bg-white border rounded-md shadow-sm;
+  @apply flex bg-white/90 backdrop-blur border rounded-md shadow-sm;
 }
 
 .bubble-menu button {
@@ -71,4 +71,19 @@
 
 .bubble-menu button.is-active {
   @apply bg-water-light text-water-deep;
+}
+
+/* New blockquote style */
+.ProseMirror blockquote {
+  @apply pl-4 border-l-4 border-water italic my-6 text-gray-700;
+}
+
+/* Selection highlight */
+.ProseMirror ::selection {
+  @apply bg-water-light/40;
+}
+
+/* Focus ring */
+.ProseMirror:focus {
+  @apply ring-2 ring-water-light/50 ring-offset-2 ring-offset-white rounded-sm;
 }
