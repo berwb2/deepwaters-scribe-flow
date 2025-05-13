@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
-import { XPBar } from '@/components/gamification/XPBar';
-import { LevelUpNotification } from '@/components/gamification/LevelUpNotification';
+import XPBar from '@/components/gamification/XPBar';
+import LevelUpNotification from '@/components/gamification/LevelUpNotification';
 import { calculateXPProgress, LEVEL_REWARDS, XP_REWARDS } from '@/lib/gamification';
 import { Award, TrendingUp } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
