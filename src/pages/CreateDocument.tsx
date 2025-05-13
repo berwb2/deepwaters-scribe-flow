@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/RichTextEditor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
@@ -74,22 +74,7 @@ const CreateDocument = () => {
   const previewContent = () => {
     if (!content) return <p className="text-muted-foreground text-center italic">Your content preview will appear here</p>;
     
-    // Basic formatting for preview
-    let preview = content;
-    
-    // Format headings
-    preview = preview.replace(/^# (.+)$/gm, '<h1>$1</h1>');
-    preview = preview.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-    preview = preview.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-    
-    // Format lists
-    preview = preview.replace(/^\* (.+)$/gm, '<li>$1</li>');
-    preview = preview.replace(/(<li>.+<\/li>)\n(<li>.+<\/li>)/g, '<ul>$1$2</ul>');
-    
-    // Format paragraphs (any line that's not a heading or list)
-    preview = preview.replace(/^([^<\n].+)$/gm, '<p>$1</p>');
-    
-    return <div dangerouslySetInnerHTML={{ __html: preview }} />;
+    return <div dangerouslySetInnerHTML={{ __html: content }} />;
   };
   
   return (
@@ -161,16 +146,10 @@ const CreateDocument = () => {
             
             <div className="space-y-2">
               <Label htmlFor="content">Content</Label>
-              <Textarea
-                id="content"
-                placeholder="Write or paste your document content here..."
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                className="h-64 font-mono"
+              <RichTextEditor 
+                content={content}
+                onChange={setContent}
               />
-              <p className="text-sm text-muted-foreground">
-                You can use Markdown formatting: # Heading, ## Subheading, * List item
-              </p>
             </div>
             
             <Button 

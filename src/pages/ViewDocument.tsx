@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import TableOfContents from '@/components/TableOfContents';
@@ -7,14 +7,23 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DocType } from '@/components/DocumentCard';
 import { ArrowLeft, Download, File, Info, Trash } from 'lucide-react';
-import { getDocument, deleteDocument, getDocumentTags, detectTables } from '@/lib/api';
+import { getDocument, deleteDocument, getDocumentTags } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from '@/components/ui/sonner';
+import CollapsibleSection from '@/components/CollapsibleSection';
+import DocumentRenderer from '@/components/DocumentRenderer';
+
+interface TocItem {
+  id: string;
+  text: string;
+  level: number;
+}
 
 const ViewDocument = () => {
   const { id } = useParams<{ id: string }>();
   const contentRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const [tocItems, setTocItems] = useState<TocItem[]>([]);
   
   // Fetch the document using React Query
   const { data: document, isLoading, error } = useQuery({
@@ -30,26 +39,6 @@ const ViewDocument = () => {
     enabled: !!id,
   });
   
-  // Format the document content
-  const formatContent = (content: string) => {
-    // First detect and format tables
-    let formatted = detectTables(content);
-    
-    // Format headings
-    formatted = formatted.replace(/^# (.+)$/gm, '<h1 id="$1">$1</h1>');
-    formatted = formatted.replace(/^## (.+)$/gm, '<h2 id="$1">$1</h2>');
-    formatted = formatted.replace(/^### (.+)$/gm, '<h3 id="$1">$1</h3>');
-    
-    // Format lists
-    formatted = formatted.replace(/^\* (.+)$/gm, '<li>$1</li>');
-    formatted = formatted.replace(/(<li>.+<\/li>)\n(<li>.+<\/li>)/g, '<ul>$1$2</ul>');
-    
-    // Format paragraphs (any line that's not a heading, list or table)
-    formatted = formatted.replace(/^([^<\n].+)$/gm, '<p>$1</p>');
-    
-    return formatted;
-  };
-
   const handleDeleteDocument = async () => {
     if (!id) return;
     
@@ -83,6 +72,14 @@ const ViewDocument = () => {
     window.document.body.removeChild(element);
   };
   
+  // Scroll to section when clicking on TOC item
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  };
+  
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -114,9 +111,6 @@ const ViewDocument = () => {
       </div>
     );
   }
-  
-  // Prepare formatted content
-  const formattedContent = formatContent(document.content);
   
   // Calculate word count
   const wordCount = document.content.split(/\s+/).filter(Boolean).length;
@@ -168,11 +162,12 @@ const ViewDocument = () => {
                 </div>
               </div>
               
-              <div 
-                ref={contentRef}
-                className="prose prose-blue max-w-none"
-                dangerouslySetInnerHTML={{ __html: formattedContent }}
-              />
+              <div ref={contentRef}>
+                <DocumentRenderer 
+                  content={document.content}
+                  onSectionClick={scrollToSection}
+                />
+              </div>
               
               <div className="mt-12 pt-6 border-t flex justify-between items-center">
                 <div className="text-sm text-muted-foreground">
