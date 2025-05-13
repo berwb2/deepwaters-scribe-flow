@@ -74,7 +74,8 @@ const ViewDocument = () => {
   
   // Scroll to section when clicking on TOC item
   const scrollToSection = (id: string) => {
-    const element = document?.getElementById?.(id) || document.querySelector(`#${id}`);
+    // Use the document from the DOM, not our document data
+    const element = window.document.getElementById(id) || window.document.querySelector(`#${id}`);
     element?.scrollIntoView({
       behavior: 'smooth',
       block: 'start',
