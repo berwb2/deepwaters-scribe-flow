@@ -210,7 +210,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         className="prose prose-blue max-w-none p-4 min-h-[12rem] focus-visible:outline-none"
       />
 
-      <style jsx global>{`
+      <style>
+        {`
         .ProseMirror p.is-editor-empty:first-child::before {
           content: attr(data-placeholder);
           float: left;
@@ -234,7 +235,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           margin: 1rem 0;
           overflow-x: auto;
         }
-      `}</style>
+      `}
+      </style>
     </div>
   );
 };
