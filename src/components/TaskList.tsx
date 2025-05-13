@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Calendar } from 'lucide-react';
@@ -7,6 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import TaskItem, { Task } from './TaskItem';
+import { TaskAchievement } from './gamification';
 
 interface TaskListProps {
   tasks: Task[];
@@ -18,6 +19,15 @@ interface TaskListProps {
 const TaskList: React.FC<TaskListProps> = ({ tasks, onAddTask, onUpdateTask, onDeleteTask }) => {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
+  const [taskCompleted, setTaskCompleted] = useState(false);
+  const [streakCount, setStreakCount] = useState(() => {
+    const stored = localStorage.getItem('taskStreak');
+    return stored ? parseInt(stored, 10) : 0;
+  });
+  const [lastCompletionDate, setLastCompletionDate] = useState(() => {
+    const stored = localStorage.getItem('lastCompletionDate');
+    return stored || '';
+  });
 
   const handleAddTask = () => {
     if (newTaskTitle.trim()) {
@@ -36,6 +46,58 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onAddTask, onUpdateTask, onD
       handleAddTask();
     }
   };
+
+  const handleTaskCompletion = (id: string, completed: boolean) => {
+    onUpdateTask(id, { completed });
+    
+    if (completed) {
+      // Trigger gamification reward
+      setTaskCompleted(true);
+      setTimeout(() => setTaskCompleted(false), 100);
+      
+      // Update streak
+      const today = new Date().toISOString().split('T')[0];
+      
+      // If this is the first completion or a continuation of the streak
+      if (!lastCompletionDate || isYesterday(lastCompletionDate, today)) {
+        const newStreak = streakCount + 1;
+        setStreakCount(newStreak);
+        localStorage.setItem('taskStreak', newStreak.toString());
+      } else if (lastCompletionDate !== today) {
+        // If not yesterday and not today, reset streak
+        setStreakCount(1);
+        localStorage.setItem('taskStreak', '1');
+      }
+      
+      // Update last completion date
+      setLastCompletionDate(today);
+      localStorage.setItem('lastCompletionDate', today);
+    }
+  };
+  
+  // Helper to check if a date is yesterday
+  const isYesterday = (previousDate: string, today: string) => {
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayString = yesterday.toISOString().split('T')[0];
+    return previousDate === yesterdayString;
+  };
+  
+  // Check if streak should be reset (missed a day)
+  useEffect(() => {
+    if (streakCount > 0 && lastCompletionDate) {
+      const today = new Date().toISOString().split('T')[0];
+      const lastDate = new Date(lastCompletionDate);
+      lastDate.setDate(lastDate.getDate() + 1); // Add one day to last completion
+      const nextExpectedDay = lastDate.toISOString().split('T')[0];
+      
+      // If today is past the next expected day, reset streak
+      if (today > nextExpectedDay) {
+        setStreakCount(0);
+        localStorage.setItem('taskStreak', '0');
+      }
+    }
+  }, [streakCount, lastCompletionDate]);
 
   // Group tasks by completion status
   const pendingTasks = tasks.filter(task => !task.completed);
@@ -85,6 +147,13 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onAddTask, onUpdateTask, onD
           </Button>
         </div>
       )}
+      
+      {/* Gamification component */}
+      <TaskAchievement 
+        taskCompleted={taskCompleted}
+        streakCount={streakCount}
+        className="bg-muted/50 p-3 rounded-lg"
+      />
 
       {pendingTasks.length > 0 && (
         <div className="space-y-2">
@@ -93,7 +162,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onAddTask, onUpdateTask, onD
             <TaskItem
               key={task.id}
               task={task}
-              onComplete={(id, completed) => onUpdateTask(id, { completed })}
+              onComplete={handleTaskCompletion}
               onDelete={onDeleteTask}
               onEdit={onUpdateTask}
             />
@@ -109,7 +178,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onAddTask, onUpdateTask, onD
               <TaskItem
                 key={task.id}
                 task={task}
-                onComplete={(id, completed) => onUpdateTask(id, { completed })}
+                onComplete={handleTaskCompletion}
                 onDelete={onDeleteTask}
                 onEdit={onUpdateTask}
               />

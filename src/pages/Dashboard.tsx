@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -6,12 +5,13 @@ import { Button } from "@/components/ui/button";
 import TaskList from '@/components/TaskList';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Plus, List, Calendar as CalendarIcon, File, Tag } from 'lucide-react';
+import { Plus, List, Calendar as CalendarIcon, File, Tag, Trophy } from 'lucide-react';
 import { Calendar } from "@/components/ui/calendar";
 import { Task } from '@/components/TaskItem';
 import DocumentCard from '@/components/DocumentCard';
 import { useQuery } from '@tanstack/react-query';
 import { listDocuments, getCurrentUser } from '@/lib/api';
+import LeaderboardDialog from '@/components/gamification/LeaderboardDialog';
 
 // Mock Tasks (to be replaced with API integration)
 const initialTasks: Task[] = [
@@ -79,11 +79,15 @@ const Dashboard = () => {
             <p className="text-muted-foreground">Welcome back, {user?.user_metadata?.display_name || 'User'}</p>
           </div>
           
-          <Button className="mt-4 md:mt-0" asChild>
-            <Link to="/create">
-              <Plus className="mr-2 h-4 w-4" /> Create New Document
-            </Link>
-          </Button>
+          <div className="flex gap-3 mt-4 md:mt-0">
+            <LeaderboardDialog />
+            
+            <Button asChild>
+              <Link to="/create">
+                <Plus className="mr-2 h-4 w-4" /> Create New Document
+              </Link>
+            </Button>
+          </div>
         </div>
         
         <div className="grid lg:grid-cols-3 gap-8">
@@ -182,6 +186,9 @@ const Dashboard = () => {
                   <Link to="/account">
                     <Tag className="mr-2 h-4 w-4" /> Manage Tags
                   </Link>
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <Trophy className="mr-2 h-4 w-4 text-amber-500" /> My Achievements
                 </Button>
               </CardContent>
             </Card>
