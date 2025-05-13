@@ -586,3 +586,51 @@ function convertSpaceAlignedToHtmlTable(lines: string[]): string {
   
   return htmlTable;
 }
+
+export async function searchDocuments(query: string) {
+  if (!query || query.length < 2) return [];
+  
+  try {
+    // We use ilike for case-insensitive search
+    const { data, error } = await supabase
+      .from('documents')
+      .select('id, title, content, content_type')
+      .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
+      .order('updated_at', { ascending: false })
+      .limit(10);
+    
+    if (error) throw error;
+    
+    // Generate excerpts by finding context around the matching term
+    const results = data.map(doc => {
+      let excerpt = '';
+      if (doc.content) {
+        // Try to find the query in the content
+        const index = doc.content.toLowerCase().indexOf(query.toLowerCase());
+        if (index >= 0) {
+          // Get some context around the match
+          const start = Math.max(0, index - 40);
+          const end = Math.min(doc.content.length, index + query.length + 40);
+          excerpt = (start > 0 ? '...' : '') + 
+                    doc.content.substring(start, end) + 
+                    (end < doc.content.length ? '...' : '');
+        } else {
+          // If no direct match (might match title), just take the beginning
+          excerpt = doc.content.substring(0, 100) + (doc.content.length > 100 ? '...' : '');
+        }
+      }
+      
+      return {
+        id: doc.id,
+        title: doc.title,
+        excerpt,
+        content_type: doc.content_type
+      };
+    });
+    
+    return results;
+  } catch (error: any) {
+    console.error("Search failed:", error);
+    return [];
+  }
+}

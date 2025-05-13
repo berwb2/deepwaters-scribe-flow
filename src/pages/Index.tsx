@@ -1,13 +1,30 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import Navbar from '@/components/Navbar';
 import Logo from '@/components/Logo';
 import Wave from '@/components/Wave';
-import { ArrowRight, File, Search, Upload } from 'lucide-react';
+import { ArrowRight, File, Search, Upload, Calendar, List, Tag } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { getCurrentUser } from '@/lib/api';
 
 const Index = () => {
+  const navigate = useNavigate();
+  
+  // Get current user status
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: getCurrentUser,
+  });
+  
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -26,8 +43,8 @@ const Index = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" className="text-lg" asChild>
-                <Link to="/start">
-                  Start Planning <ArrowRight className="ml-2 h-5 w-5" />
+                <Link to="/login">
+                  Get Started <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               <Button size="lg" variant="outline" className="text-lg" asChild>
@@ -73,12 +90,75 @@ const Index = () => {
             
             <div className="water-card p-8 flex flex-col items-center text-center">
               <div className="p-4 bg-water-light/50 rounded-full mb-6">
-                <Upload className="h-10 w-10 text-water-deep" />
+                <List className="h-10 w-10 text-water-deep" />
               </div>
-              <h3 className="text-xl font-medium mb-3">Simple Import</h3>
+              <h3 className="text-xl font-medium mb-3">Task Management</h3>
               <p className="text-neutral-dark">
-                Paste or upload your content and watch it transform instantly with smart formatting.
+                Keep track of your tasks and daily schedule alongside your knowledge base.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Feature Details Section */}
+      <section className="py-20 bg-muted/30">
+        <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="section-heading text-center mb-16">Powerful Features</h2>
+            
+            <div className="grid md:grid-cols-2 gap-16">
+              <div>
+                <div className="flex items-center mb-6">
+                  <div className="p-3 bg-water-light/50 rounded-full mr-4">
+                    <Calendar className="h-6 w-6 text-water-deep" />
+                  </div>
+                  <h3 className="text-xl font-medium">Daily Planning</h3>
+                </div>
+                <p className="text-neutral-dark mb-4">
+                  Keep your schedule and to-do list front and center. Plan your day efficiently with our easy-to-use calendar and task management tools.
+                </p>
+                <ul className="space-y-2">
+                  <li className="flex items-center">
+                    <span className="text-water-deep mr-2">•</span> 
+                    Task lists with completion tracking
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-water-deep mr-2">•</span> 
+                    Daily calendar view
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-water-deep mr-2">•</span> 
+                    Due dates and reminders
+                  </li>
+                </ul>
+              </div>
+              
+              <div>
+                <div className="flex items-center mb-6">
+                  <div className="p-3 bg-water-light/50 rounded-full mr-4">
+                    <Tag className="h-6 w-6 text-water-deep" />
+                  </div>
+                  <h3 className="text-xl font-medium">Smart Organization</h3>
+                </div>
+                <p className="text-neutral-dark mb-4">
+                  Organize your knowledge base with tags, categories, and powerful search. Find what you need when you need it.
+                </p>
+                <ul className="space-y-2">
+                  <li className="flex items-center">
+                    <span className="text-water-deep mr-2">•</span> 
+                    Custom tagging system
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-water-deep mr-2">•</span> 
+                    Full-text search across all documents
+                  </li>
+                  <li className="flex items-center">
+                    <span className="text-water-deep mr-2">•</span> 
+                    Table of contents for large documents
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -108,30 +188,6 @@ const Index = () => {
         </div>
       </section>
       
-      {/* Testimonials */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <h2 className="section-heading text-center mb-16">What People Are Saying</h2>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="water-card p-6">
-                <div className="flex items-center mb-4">
-                  <div className="w-12 h-12 rounded-full bg-water/20"></div>
-                  <div className="ml-4">
-                    <div className="font-medium">User {i}</div>
-                    <div className="text-sm text-muted-foreground">Writer</div>
-                  </div>
-                </div>
-                <p className="text-neutral-dark italic">
-                  "DeepWaters has transformed how I organize my long-form content. The beautiful formatting and easy navigation make my planning documents a joy to read and use."
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-      
       {/* CTA Section */}
       <section className="relative bg-water-deep text-white py-16">
         <div className="container mx-auto px-4">
@@ -141,7 +197,7 @@ const Index = () => {
               Start creating beautiful, structured documents today.
             </p>
             <Button size="lg" variant="secondary" className="bg-white hover:bg-gray-100 text-water-deep" asChild>
-              <Link to="/start">
+              <Link to="/login">
                 Get Started Now
               </Link>
             </Button>
