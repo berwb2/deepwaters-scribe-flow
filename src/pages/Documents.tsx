@@ -4,16 +4,107 @@ import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import Navbar from '@/components/Navbar';
 import DocumentCard from '@/components/DocumentCard';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, FolderPlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { useQuery } from '@tanstack/react-query';
-import { listDocuments, getCurrentUser } from '@/lib/api';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { listDocuments, getCurrentUser, listFolders, addDocumentToFolder } from '@/lib/api';
 import { DocumentMeta } from '@/types/documents';
+import { toast } from '@/components/ui/sonner';
+
+// Add a new interface for the move to folder dialog
+interface MoveToFolderDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  documentId: string;
+}
+
+const MoveToFolderDialog: React.FC<MoveToFolderDialogProps> = ({ isOpen, onClose, documentId }) => {
+  const [folderId, setFolderId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const queryClient = useQueryClient();
+  
+  // Fetch available folders
+  const { data: foldersData } = useQuery({
+    queryKey: ['folders'],
+    queryFn: () => listFolders(),
+    enabled: isOpen,
+  });
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!folderId) {
+      toast.error("Please select a folder");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      await addDocumentToFolder(folderId, documentId);
+      toast.success("Document added to folder");
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      queryClient.invalidateQueries({ queryKey: ['folders'] });
+      onClose();
+      setFolderId('');
+    } catch (error) {
+      console.error("Error adding document to folder:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Move to Folder</DialogTitle>
+        </DialogHeader>
+        
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+          <div className="space-y-2">
+            <Label htmlFor="folder">Select Folder</Label>
+            <Select value={folderId} onValueChange={setFolderId}>
+              <SelectTrigger id="folder">
+                <SelectValue placeholder="Select a folder" />
+              </SelectTrigger>
+              <SelectContent>
+                {foldersData?.folders?.length > 0 ? (
+                  foldersData.folders.map((folder) => (
+                    <SelectItem key={folder.id} value={folder.id}>
+                      {folder.name}
+                    </SelectItem>
+                  ))
+                ) : (
+                  <SelectItem value="no-folders" disabled>
+                    No available folders
+                  </SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <DialogFooter className="mt-6">
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="submit" disabled={isSubmitting || !folderId}>
+              {isSubmitting ? 'Moving...' : 'Move to Folder'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const Documents = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string | null>(null);
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [selectedDocumentId, setSelectedDocumentId] = useState('');
   
   // Get current user
   const { data: user } = useQuery({
@@ -36,6 +127,12 @@ const Documents = () => {
     doc.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
     doc.content.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
+
+  // Handle "Move to Folder" click
+  const handleMoveToFolder = (documentId: string) => {
+    setSelectedDocumentId(documentId);
+    setMoveDialogOpen(true);
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -118,7 +215,16 @@ const Documents = () => {
             ) : filteredDocuments.length > 0 ? (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredDocuments.map((doc) => (
-                  <DocumentCard key={doc.id} document={doc as DocumentMeta} />
+                  <DocumentCard 
+                    key={doc.id} 
+                    document={doc as DocumentMeta}
+                    contextMenuItems={[
+                      {
+                        label: 'Move to Folder',
+                        onClick: async () => handleMoveToFolder(doc.id)
+                      }
+                    ]}
+                  />
                 ))}
               </div>
             ) : (
@@ -141,6 +247,12 @@ const Documents = () => {
           © {new Date().getFullYear()} DeepWaters. All rights reserved.
         </div>
       </footer>
+      
+      <MoveToFolderDialog
+        isOpen={moveDialogOpen}
+        onClose={() => setMoveDialogOpen(false)}
+        documentId={selectedDocumentId}
+      />
     </div>
   );
 };

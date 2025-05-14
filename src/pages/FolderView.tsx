@@ -6,7 +6,7 @@ import DocumentCard from '@/components/DocumentCard';
 import { Button } from "@/components/ui/button";
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, FolderEdit, FolderX, Plus, Search } from 'lucide-react';
-import { getFolder, listFolderDocuments, addDocumentToFolder, removeDocumentFromFolder, deleteFolder } from '@/lib/api';
+import { getFolder, listFolderDocuments, addDocumentToFolder, removeDocumentFromFolder, deleteFolder, listDocuments } from '@/lib/api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/components/ui/sonner';
 import { Input } from '@/components/ui/input';
@@ -40,10 +40,26 @@ const MoveDocumentDialog: React.FC<MoveDocumentDialogProps> = ({
   const [documentId, setDocumentId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
+  // Modified to fetch all documents rather than just those not in a folder
   const { data: documents } = useQuery({
-    queryKey: ['documents'],
-    queryFn: () => listFolderDocuments(null), // Fetch documents not in any folder
+    queryKey: ['allDocuments'],
+    queryFn: () => listDocuments(),
     enabled: isOpen,
+  });
+  
+  // Get current folder documents to filter out
+  const { data: currentFolderDocs } = useQuery({
+    queryKey: ['folderDocuments', folderId],
+    queryFn: () => listFolderDocuments(folderId),
+    enabled: isOpen && !!folderId,
+  });
+  
+  // Filter out documents that are already in the current folder
+  const availableDocuments = documents?.documents?.filter(doc => {
+    const isInCurrentFolder = currentFolderDocs?.documents?.some(
+      folderDoc => folderDoc.id === doc.id
+    );
+    return !isInCurrentFolder;
   });
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,8 +100,8 @@ const MoveDocumentDialog: React.FC<MoveDocumentDialogProps> = ({
                 <SelectValue placeholder="Select a document" />
               </SelectTrigger>
               <SelectContent>
-                {documents?.documents?.length > 0 ? (
-                  documents.documents.map((doc) => (
+                {availableDocuments?.length > 0 ? (
+                  availableDocuments.map((doc) => (
                     <SelectItem key={doc.id} value={doc.id}>
                       {doc.title}
                     </SelectItem>
