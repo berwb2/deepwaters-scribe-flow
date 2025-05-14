@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 
@@ -639,7 +640,7 @@ export async function searchDocuments(query: string) {
 
 // Update the interface for folder creation data
 export interface FolderCreationData {
-  name: string;
+  name: string; // This is required - don't make it optional
   description?: string;
   color?: string;
   priority?: string;
@@ -647,16 +648,21 @@ export interface FolderCreationData {
   user_id?: string;
 }
 
-export async function createFolder(folderData: Partial<FolderCreationData>) {
+export async function createFolder(folderData: FolderCreationData) {
   try {
     const user = await getCurrentUser();
     if (!user) throw new Error("Not authenticated");
 
-    // Make sure user_id is set
+    // Make sure user_id is set and name is provided
     const folderWithUserId = {
       ...folderData,
       user_id: user.id
     };
+
+    // Ensure name is provided
+    if (!folderWithUserId.name) {
+      throw new Error("Folder name is required");
+    }
 
     const { data, error } = await supabase
       .from('document_folders')

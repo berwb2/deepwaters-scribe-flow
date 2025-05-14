@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
-import { createFolder } from '@/lib/api';
+import { createFolder, FolderCreationData } from '@/lib/api';
 import { getCurrentUser } from '@/lib/api';
 
 interface CreateFolderDialogProps {
@@ -41,20 +41,16 @@ const CreateFolderDialog = ({ isOpen, onClose, onFolderCreated }: CreateFolderDi
     try {
       setIsSubmitting(true);
       
-      // Get current user for the user_id
-      const user = await getCurrentUser();
-      if (!user) {
-        throw new Error("You must be logged in to create a folder");
-      }
-      
-      await createFolder({
+      // Create folder data object with required name property
+      const folderData: FolderCreationData = {
         name: name.trim(),
         description: description.trim() || undefined,
         category: category || undefined,
         priority: priority || undefined,
-        color: color || undefined,
-        user_id: user.id  // Include user_id from the current user
-      });
+        color: color || undefined
+      };
+      
+      await createFolder(folderData);
       
       // Reset form
       setName('');
