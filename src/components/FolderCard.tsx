@@ -1,98 +1,96 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Folder, FolderOpen } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Calendar, FileText, Folder as FolderIcon } from "lucide-react";
+import { format } from "date-fns";
+import { FolderMeta } from '@/types/documents';
 
-export type FolderPriority = 'low' | 'medium' | 'high';
-export type FolderCategory = 'personal' | 'work' | 'school' | 'project' | 'other';
+// Export the FolderMeta type from our new types file
+export { type FolderMeta };
 
-export interface FolderMeta {
-  id: string;
-  name: string;
-  description?: string;
-  color?: string;
-  priority?: FolderPriority;
-  category?: FolderCategory;
-  document_count: number;
-  created_at: string;
-}
+const getPriorityColor = (priority: string | null) => {
+  switch (priority) {
+    case 'high':
+      return 'bg-red-500 text-white';
+    case 'medium':
+      return 'bg-amber-500 text-white';
+    case 'low':
+      return 'bg-green-500 text-white';
+    default:
+      return 'bg-gray-500 text-white';
+  }
+};
 
-interface FolderCardProps {
-  folder: FolderMeta;
-  className?: string;
-}
-
-const FolderCard: React.FC<FolderCardProps> = ({ folder, className }) => {
-  // Map priority to color styles
-  const priorityStyles = {
-    low: "bg-blue-100 text-blue-800",
-    medium: "bg-yellow-100 text-yellow-800",
-    high: "bg-red-100 text-red-800"
-  };
+const getFolderColor = (color: string | null) => {
+  if (!color) return 'text-blue-500';
   
-  // Map category to display names
-  const categoryNames = {
-    personal: "Personal",
-    work: "Work",
-    school: "School",
-    project: "Project",
-    other: "Other"
-  };
-  
-  const folderColorStyle = folder.color ? {
-    backgroundColor: `${folder.color}20`, // Using transparency for background
-    borderLeft: `4px solid ${folder.color}`
-  } : {};
+  switch (color.toLowerCase()) {
+    case 'blue':
+      return 'text-blue-500';
+    case 'green':
+      return 'text-green-500';
+    case 'red':
+      return 'text-red-500';
+    case 'purple':
+      return 'text-purple-500';
+    case 'amber':
+      return 'text-amber-500';
+    case 'indigo':
+      return 'text-indigo-500';
+    case 'water':
+      return 'text-water';
+    default:
+      return 'text-blue-500';
+  }
+};
 
+const FolderCard = ({ folder }: { folder: FolderMeta }) => {
+  const formattedDate = format(new Date(folder.created_at), 'MMM dd, yyyy');
+  const folderColor = getFolderColor(folder.color);
+  
   return (
-    <Link to={`/folders/${folder.id}`} className="block">
-      <Card 
-        className={cn(
-          "transition-all duration-200 hover:shadow-md hover:-translate-y-1", 
-          className
-        )} 
-        style={folderColorStyle}
-      >
-        <CardContent className="p-4">
-          <div className="flex items-center mb-2">
-            <div className="mr-3">
-              <FolderOpen 
-                className="h-6 w-6" 
-                style={folder.color ? { color: folder.color } : {}} 
-              />
-            </div>
-            <h3 className="font-medium text-lg truncate flex-1">{folder.name}</h3>
-          </div>
-          
-          {folder.description && (
-            <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
-              {folder.description}
-            </p>
-          )}
-          
-          <div className="flex flex-wrap gap-2 mt-3">
-            {folder.priority && (
-              <Badge variant="outline" className={priorityStyles[folder.priority]}>
-                {folder.priority.charAt(0).toUpperCase() + folder.priority.slice(1)} Priority
-              </Badge>
-            )}
-            
-            {folder.category && (
-              <Badge variant="outline" className="bg-slate-100">
-                {categoryNames[folder.category]}
-              </Badge>
-            )}
-            
-            <Badge variant="outline" className="ml-auto">
-              {folder.document_count} {folder.document_count === 1 ? 'document' : 'documents'}
+    <Card className="h-full flex flex-col hover:shadow-md transition-shadow">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <CardTitle className="text-lg font-serif flex items-center">
+            <FolderIcon className={`h-5 w-5 mr-2 ${folderColor}`} />
+            <Link to={`/folders/${folder.id}`} className="hover:text-primary transition-colors">
+              {folder.name}
+            </Link>
+          </CardTitle>
+          {folder.priority && (
+            <Badge className={getPriorityColor(folder.priority)}>
+              {folder.priority.charAt(0).toUpperCase() + folder.priority.slice(1)}
             </Badge>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="flex-1">
+        {folder.description && (
+          <p className="text-muted-foreground text-sm mb-3">{folder.description}</p>
+        )}
+        
+        {folder.category && (
+          <Badge variant="outline" className="mb-2">
+            {folder.category.charAt(0).toUpperCase() + folder.category.slice(1)}
+          </Badge>
+        )}
+      </CardContent>
+      <CardFooter className="text-xs text-muted-foreground pt-2 border-t">
+        <div className="flex justify-between items-center w-full">
+          <div className="flex items-center">
+            <Calendar className="h-3 w-3 mr-1" />
+            <span>{formattedDate}</span>
           </div>
-        </CardContent>
-      </Card>
-    </Link>
+          <div className="flex items-center">
+            <FileText className="h-3 w-3 mr-1" />
+            <span>{folder.document_count || 0} documents</span>
+          </div>
+        </div>
+      </CardFooter>
+    </Card>
   );
 };
 

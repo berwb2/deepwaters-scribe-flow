@@ -637,12 +637,14 @@ export async function searchDocuments(query: string) {
 
 // Add folder management API functions
 
+// Update the interface for folder creation data
 export interface FolderCreationData {
   name: string;
   description?: string;
   color?: string;
   priority?: string;
   category?: string;
+  user_id: string; // Add user_id as required field
 }
 
 export async function createFolder(folderData: FolderCreationData) {
@@ -650,9 +652,15 @@ export async function createFolder(folderData: FolderCreationData) {
     const user = await getCurrentUser();
     if (!user) throw new Error("Not authenticated");
 
+    // Make sure user_id is set
+    const folderWithUserId: FolderCreationData = {
+      ...folderData,
+      user_id: user.id
+    };
+
     const { data, error } = await supabase
       .from('document_folders')
-      .insert(folderData)
+      .insert(folderWithUserId)
       .select()
       .single();
 

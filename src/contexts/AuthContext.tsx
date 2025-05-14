@@ -1,10 +1,16 @@
 
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 
-interface User {
+// Define the User type with user_metadata
+export interface User {
   id: string;
   email: string;
   name?: string;
+  user_metadata?: {
+    name?: string;
+    avatar_url?: string;
+    display_name?: string;
+  };
 }
 
 interface AuthContextProps {
@@ -12,6 +18,7 @@ interface AuthContextProps {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  signOut: () => void; // Add signOut method to match Navbar usage
   register: (email: string, password: string, name?: string) => Promise<void>;
 }
 
@@ -33,12 +40,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setUser({
       id: '1',
       email,
-      name: 'Demo User'
+      name: 'Demo User',
+      user_metadata: {
+        name: 'Demo User',
+        avatar_url: '/placeholder.svg',
+        display_name: 'Demo User'
+      }
     });
   };
 
   const logout = () => {
     setUser(null);
+  };
+
+  // Add signOut as an alias to logout for consistency
+  const signOut = () => {
+    logout();
   };
 
   const register = async (email: string, password: string, name?: string) => {
@@ -49,7 +66,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setUser({
       id: '1',
       email,
-      name: name || 'New User'
+      name: name || 'New User',
+      user_metadata: {
+        name: name || 'New User',
+        display_name: name || 'New User'
+      }
     });
   };
 
@@ -60,6 +81,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         isAuthenticated: !!user,
         login,
         logout,
+        signOut, // Added signOut
         register
       }}
     >

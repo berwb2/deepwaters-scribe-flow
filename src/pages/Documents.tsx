@@ -117,7 +117,7 @@ const Documents = () => {
             ) : filteredDocuments.length > 0 ? (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredDocuments.map((doc) => (
-                  <DocumentCard key={doc.id} document={doc} />
+                  <DocumentCard key={doc.id} document={doc as DocumentMeta} />
                 ))}
               </div>
             ) : (

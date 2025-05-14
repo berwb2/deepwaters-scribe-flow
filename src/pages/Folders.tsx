@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -132,7 +131,7 @@ const Folders = () => {
             ) : filteredFolders.length > 0 ? (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredFolders.map((folder) => (
-                  <FolderCard key={folder.id} folder={folder} />
+                  <FolderCard key={folder.id} folder={folder as FolderMeta} />
                 ))}
               </div>
             ) : (

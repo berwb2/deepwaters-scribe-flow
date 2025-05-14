@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, List, Calendar as CalendarIcon, File, Tag, Trophy } from 'lucide-react';
 import { Calendar } from "@/components/ui/calendar";
 import { Task } from '@/components/TaskItem';
-import DocumentCard from '@/components/DocumentCard';
+import DocumentCard, { DocumentMeta } from '@/components/DocumentCard';
 import { useQuery } from '@tanstack/react-query';
 import { listDocuments, getCurrentUser } from '@/lib/api';
 import LeaderboardDialog from '@/components/gamification/LeaderboardDialog';
@@ -147,7 +147,7 @@ const Dashboard = () => {
                 {recentDocuments && recentDocuments.documents && recentDocuments.documents.length > 0 ? (
                   <div className="grid sm:grid-cols-2 gap-4">
                     {recentDocuments.documents.slice(0, 4).map((doc) => (
-                      <DocumentCard key={doc.id} document={doc} />
+                      <DocumentCard key={doc.id} document={doc as DocumentMeta} />
                     ))}
                   </div>
                 ) : (
