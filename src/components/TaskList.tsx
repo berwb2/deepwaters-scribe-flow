@@ -8,6 +8,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import TaskItem, { Task } from './TaskItem';
 import { TaskAchievement } from './gamification';
+import { toast } from '@/components/ui/use-toast';
 
 interface TaskListProps {
   tasks: Task[];
@@ -31,13 +32,26 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onAddTask, onUpdateTask, onD
 
   const handleAddTask = () => {
     if (newTaskTitle.trim()) {
-      onAddTask({
-        title: newTaskTitle.trim(),
-        completed: false,
-        due_date: dueDate ? dueDate.toISOString() : undefined
-      });
-      setNewTaskTitle('');
-      setDueDate(undefined);
+      try {
+        onAddTask({
+          title: newTaskTitle.trim(),
+          completed: false,
+          due_date: dueDate ? dueDate.toISOString() : undefined
+        });
+        setNewTaskTitle('');
+        setDueDate(undefined);
+        toast({
+          title: "Task added",
+          description: "Your task has been created successfully."
+        });
+      } catch (error) {
+        console.error("Error adding task:", error);
+        toast({
+          title: "Error adding task",
+          description: "There was an error creating your task. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -48,30 +62,39 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onAddTask, onUpdateTask, onD
   };
 
   const handleTaskCompletion = (id: string, completed: boolean) => {
-    onUpdateTask(id, { completed });
-    
-    if (completed) {
-      // Trigger gamification reward
-      setTaskCompleted(true);
-      setTimeout(() => setTaskCompleted(false), 100);
+    try {
+      onUpdateTask(id, { completed });
       
-      // Update streak
-      const today = new Date().toISOString().split('T')[0];
-      
-      // If this is the first completion or a continuation of the streak
-      if (!lastCompletionDate || isYesterday(lastCompletionDate, today)) {
-        const newStreak = streakCount + 1;
-        setStreakCount(newStreak);
-        localStorage.setItem('taskStreak', newStreak.toString());
-      } else if (lastCompletionDate !== today) {
-        // If not yesterday and not today, reset streak
-        setStreakCount(1);
-        localStorage.setItem('taskStreak', '1');
+      if (completed) {
+        // Trigger gamification reward
+        setTaskCompleted(true);
+        setTimeout(() => setTaskCompleted(false), 100);
+        
+        // Update streak
+        const today = new Date().toISOString().split('T')[0];
+        
+        // If this is the first completion or a continuation of the streak
+        if (!lastCompletionDate || isYesterday(lastCompletionDate, today)) {
+          const newStreak = streakCount + 1;
+          setStreakCount(newStreak);
+          localStorage.setItem('taskStreak', newStreak.toString());
+        } else if (lastCompletionDate !== today) {
+          // If not yesterday and not today, reset streak
+          setStreakCount(1);
+          localStorage.setItem('taskStreak', '1');
+        }
+        
+        // Update last completion date
+        setLastCompletionDate(today);
+        localStorage.setItem('lastCompletionDate', today);
       }
-      
-      // Update last completion date
-      setLastCompletionDate(today);
-      localStorage.setItem('lastCompletionDate', today);
+    } catch (error) {
+      console.error("Error updating task:", error);
+      toast({
+        title: "Error updating task",
+        description: "There was an error updating your task. Please try again.",
+        variant: "destructive"
+      });
     }
   };
   

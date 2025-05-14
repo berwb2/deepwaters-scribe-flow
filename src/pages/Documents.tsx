@@ -3,12 +3,13 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import Navbar from '@/components/Navbar';
-import DocumentCard, { DocumentMeta } from '@/components/DocumentCard';
+import DocumentCard from '@/components/DocumentCard';
 import { Plus, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { listDocuments, getCurrentUser } from '@/lib/api';
+import { DocumentMeta } from '@/types/documents';
 
 const Documents = () => {
   const [searchTerm, setSearchTerm] = useState('');

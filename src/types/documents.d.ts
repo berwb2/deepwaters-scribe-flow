@@ -31,3 +31,6 @@ export interface FolderMeta {
   user_id: string;
   document_count?: number;
 }
+
+// Define folder category type
+export type FolderCategory = 'personal' | 'work' | 'school' | 'project' | 'other' | string;

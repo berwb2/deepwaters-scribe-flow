@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Home, File, Search, User, Folder, LogOut } from 'lucide-react';
+import Logo from '@/components/Logo';
 
 const Navbar = () => {
   const { pathname } = useLocation();
@@ -24,8 +26,8 @@ const Navbar = () => {
   return (
     <nav className="border-b bg-background">
       <div className="flex h-16 items-center px-4">
-        <Link to="/" className="font-bold text-xl flex-none">
-          DeepWaters
+        <Link to="/" className="flex-none">
+          <Logo size="small" />
         </Link>
         <div className="flex-1 flex justify-center">
           <ul className="flex space-x-1">
@@ -62,12 +64,12 @@ const Navbar = () => {
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.user_metadata?.name} />
-                    <AvatarFallback>{user?.user_metadata?.name?.charAt(0)}</AvatarFallback>
+                    <AvatarFallback>{user?.user_metadata?.name?.charAt(0) || 'U'}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>{user?.user_metadata?.name}</DropdownMenuLabel>
+                <DropdownMenuLabel>{user?.user_metadata?.name || 'User'}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link to="/account">
@@ -75,11 +77,9 @@ const Navbar = () => {
                     <span>My Account</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild onClick={() => signOut()}>
-                  <Link to="/login">
-                    <LogOut className="h-4 w-4 mr-2" />
-                    <span>Sign Out</span>
-                  </Link>
+                <DropdownMenuItem onClick={() => signOut()}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  <span>Sign Out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

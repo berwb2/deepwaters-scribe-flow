@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -8,10 +9,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, List, Calendar as CalendarIcon, File, Tag, Trophy } from 'lucide-react';
 import { Calendar } from "@/components/ui/calendar";
 import { Task } from '@/components/TaskItem';
-import DocumentCard, { DocumentMeta } from '@/components/DocumentCard';
+import DocumentCard from '@/components/DocumentCard';
 import { useQuery } from '@tanstack/react-query';
 import { listDocuments, getCurrentUser } from '@/lib/api';
 import LeaderboardDialog from '@/components/gamification/LeaderboardDialog';
+import { DocumentMeta } from '@/types/documents';
 
 // Mock Tasks (to be replaced with API integration)
 const initialTasks: Task[] = [

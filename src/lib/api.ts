@@ -644,16 +644,16 @@ export interface FolderCreationData {
   color?: string;
   priority?: string;
   category?: string;
-  user_id: string; // Add user_id as required field
+  user_id?: string;
 }
 
-export async function createFolder(folderData: FolderCreationData) {
+export async function createFolder(folderData: Partial<FolderCreationData>) {
   try {
     const user = await getCurrentUser();
     if (!user) throw new Error("Not authenticated");
 
     // Make sure user_id is set
-    const folderWithUserId: FolderCreationData = {
+    const folderWithUserId = {
       ...folderData,
       user_id: user.id
     };

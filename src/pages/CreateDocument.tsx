@@ -8,13 +8,13 @@ import RichTextEditor from '@/components/RichTextEditor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { DocType } from '@/types/documents';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
 import { createDocument, addDocumentToFolder } from '@/lib/api';
 import { toast } from '@/components/ui/sonner';
 import { useQuery } from '@tanstack/react-query';
 import { listFolders } from '@/lib/api';
+import { DocType } from '@/types/documents';
 
 const CreateDocument = () => {
   const navigate = useNavigate();
@@ -95,7 +95,7 @@ const CreateDocument = () => {
     
     return <div dangerouslySetInnerHTML={{ __html: content }} />;
   };
-  
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
