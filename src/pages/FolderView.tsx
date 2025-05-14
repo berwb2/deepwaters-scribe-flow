@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -90,7 +91,7 @@ const MoveDocumentDialog: React.FC<MoveDocumentDialogProps> = ({
                     </SelectItem>
                   ))
                 ) : (
-                  <SelectItem value="" disabled>
+                  <SelectItem value="no-documents" disabled>
                     No available documents
                   </SelectItem>
                 )}

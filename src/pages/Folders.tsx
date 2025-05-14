@@ -86,14 +86,14 @@ const Folders = () => {
                   <div>
                     <Label htmlFor="category-filter" className="text-sm mb-1 block">Category</Label>
                     <Select 
-                      value={selectedCategory || ""} 
-                      onValueChange={(value) => setSelectedCategory(value || null)}
+                      value={selectedCategory || "none"} 
+                      onValueChange={(value) => setSelectedCategory(value === "none" ? null : value)}
                     >
                       <SelectTrigger id="category-filter" className="w-36">
                         <SelectValue placeholder="All Categories" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Categories</SelectItem>
+                        <SelectItem value="none">All Categories</SelectItem>
                         <SelectItem value="personal">Personal</SelectItem>
                         <SelectItem value="work">Work</SelectItem>
                         <SelectItem value="school">School</SelectItem>
@@ -106,14 +106,14 @@ const Folders = () => {
                   <div>
                     <Label htmlFor="priority-filter" className="text-sm mb-1 block">Priority</Label>
                     <Select 
-                      value={selectedPriority || ""} 
-                      onValueChange={(value) => setSelectedPriority(value || null)}
+                      value={selectedPriority || "none"} 
+                      onValueChange={(value) => setSelectedPriority(value === "none" ? null : value)}
                     >
                       <SelectTrigger id="priority-filter" className="w-36">
                         <SelectValue placeholder="All Priorities" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Priorities</SelectItem>
+                        <SelectItem value="none">All Priorities</SelectItem>
                         <SelectItem value="low">Low</SelectItem>
                         <SelectItem value="medium">Medium</SelectItem>
                         <SelectItem value="high">High</SelectItem>
