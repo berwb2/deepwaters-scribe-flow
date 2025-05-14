@@ -24,7 +24,7 @@ const CreateDocument = () => {
   const [tag, setTag] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedFolder, setSelectedFolder] = useState<string>('');
+  const [selectedFolder, setSelectedFolder] = useState<string>('none'); // Changed initial value to 'none'
   
   // Get folders for selection
   const { data: foldersData } = useQuery({
@@ -72,7 +72,7 @@ const CreateDocument = () => {
       );
       
       // If a folder is selected, add the document to it
-      if (selectedFolder) {
+      if (selectedFolder && selectedFolder !== 'none') { // Modified to check for 'none'
         try {
           await addDocumentToFolder(selectedFolder, documentId);
         } catch (error) {
@@ -143,7 +143,7 @@ const CreateDocument = () => {
                   <SelectValue placeholder="Select folder (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem> {/* Changed empty string to "none" */}
                   {foldersData?.folders?.map(folder => (
                     <SelectItem key={folder.id} value={folder.id}>
                       {folder.name}
