@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { DocType, DocumentMeta, FolderMeta, FolderPriority } from '@/types/documents';
 
 interface MoveDocumentDialogProps {
   isOpen: boolean;
@@ -19,9 +20,6 @@ interface MoveDocumentDialogProps {
   folderId: string;
   onDocumentAdded: () => void;
 }
-
-// Define custom type for folder priority display
-type FolderPriorityStyle = 'low' | 'medium' | 'high';
 
 // Define custom type for folder category display
 type FolderCategory = 'personal' | 'work' | 'school' | 'project' | 'other';
@@ -140,7 +138,7 @@ const FolderView = () => {
   ) || [];
   
   // Map priority to styles
-  const priorityStyles: Record<FolderPriorityStyle, string> = {
+  const priorityStyles: Record<string, string> = {
     low: "bg-blue-100 text-blue-800",
     medium: "bg-yellow-100 text-yellow-800",
     high: "bg-red-100 text-red-800"
@@ -246,7 +244,7 @@ const FolderView = () => {
               
               <div className="flex flex-wrap gap-2 mt-3">
                 {folder.priority && (
-                  <Badge variant="outline" className={priorityStyles[folder.priority as FolderPriority]}>
+                  <Badge variant="outline" className={priorityStyles[folder.priority]}>
                     {folder.priority.charAt(0).toUpperCase() + folder.priority.slice(1)} Priority
                   </Badge>
                 )}
@@ -290,7 +288,7 @@ const FolderView = () => {
             {filteredDocuments.map((doc) => (
               <DocumentCard 
                 key={doc.id} 
-                document={doc} 
+                document={doc as DocumentMeta} 
                 contextMenuItems={[
                   {
                     label: 'Remove from folder',
