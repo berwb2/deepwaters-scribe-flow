@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import Navbar from '@/components/Navbar';
-import FolderCard, { FolderMeta } from '@/components/FolderCard';
+import FolderCard from '@/components/FolderCard';
 import CreateFolderDialog from '@/components/CreateFolderDialog';
 import { Plus, Search, FolderPlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -11,7 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { listFolders, getCurrentUser } from '@/lib/api';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { FolderMeta as FolderMetaType } from '@/types/documents';
+import { FolderMeta } from '@/types/documents';
 
 const Folders = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -132,7 +132,7 @@ const Folders = () => {
             ) : filteredFolders.length > 0 ? (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredFolders.map((folder) => (
-                  <FolderCard key={folder.id} folder={folder as FolderMetaType} />
+                  <FolderCard key={folder.id} folder={folder as FolderMeta} />
                 ))}
               </div>
             ) : (
