@@ -66,6 +66,39 @@ export type Database = {
         }
         Relationships: []
       }
+      document_folders: {
+        Row: {
+          category: string | null
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          priority: string | null
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          priority?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          priority?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       document_tags: {
         Row: {
           document_id: string
@@ -159,6 +192,39 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      folder_documents: {
+        Row: {
+          added_at: string
+          document_id: string
+          folder_id: string
+        }
+        Insert: {
+          added_at?: string
+          document_id: string
+          folder_id: string
+        }
+        Update: {
+          added_at?: string
+          document_id?: string
+          folder_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folder_documents_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "folder_documents_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "document_folders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
