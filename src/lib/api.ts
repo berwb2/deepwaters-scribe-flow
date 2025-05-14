@@ -634,3 +634,204 @@ export async function searchDocuments(query: string) {
     return [];
   }
 }
+
+// Add folder management API functions
+
+export interface FolderCreationData {
+  name: string;
+  description?: string;
+  color?: string;
+  priority?: string;
+  category?: string;
+}
+
+export async function createFolder(folderData: FolderCreationData) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) throw new Error("Not authenticated");
+
+    const { data, error } = await supabase
+      .from('document_folders')
+      .insert(folderData)
+      .select()
+      .single();
+
+    if (error) throw error;
+    toast.success("Folder created successfully");
+    return data;
+  } catch (error: any) {
+    toast.error("Failed to create folder", { description: error.message });
+    throw error;
+  }
+}
+
+export async function listFolders(filters: any = {}) {
+  try {
+    let query = supabase
+      .from('document_folders')
+      .select('*', { count: 'exact' });
+    
+    // Apply filters
+    if (filters.category) {
+      query = query.eq('category', filters.category);
+    }
+    
+    if (filters.priority) {
+      query = query.eq('priority', filters.priority);
+    }
+    
+    const { data, error, count } = await query.order('name');
+    
+    if (error) throw error;
+    
+    // Add document count to each folder
+    const foldersWithCount = await Promise.all(data.map(async (folder) => {
+      const { count } = await supabase
+        .from('folder_documents')
+        .select('*', { count: 'exact' })
+        .eq('folder_id', folder.id);
+      
+      return {
+        ...folder,
+        document_count: count || 0
+      };
+    }));
+    
+    return {
+      folders: foldersWithCount,
+      total: count || 0,
+    };
+  } catch (error: any) {
+    toast.error("Failed to fetch folders", { description: error.message });
+    throw error;
+  }
+}
+
+export async function getFolder(folderId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('document_folders')
+      .select('*')
+      .eq('id', folderId)
+      .single();
+      
+    if (error) throw error;
+    
+    return data;
+  } catch (error: any) {
+    toast.error("Failed to fetch folder", { description: error.message });
+    throw error;
+  }
+}
+
+export async function updateFolder(folderId: string, updates: any) {
+  try {
+    const { data, error } = await supabase
+      .from('document_folders')
+      .update(updates)
+      .eq('id', folderId)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    
+    toast.success("Folder updated successfully");
+    return data;
+  } catch (error: any) {
+    toast.error("Failed to update folder", { description: error.message });
+    throw error;
+  }
+}
+
+export async function deleteFolder(folderId: string) {
+  try {
+    const { error } = await supabase
+      .from('document_folders')
+      .delete()
+      .eq('id', folderId);
+      
+    if (error) throw error;
+    
+    toast.success("Folder deleted successfully");
+    return true;
+  } catch (error: any) {
+    toast.error("Failed to delete folder", { description: error.message });
+    throw error;
+  }
+}
+
+export async function addDocumentToFolder(folderId: string, documentId: string) {
+  try {
+    const { error } = await supabase
+      .from('folder_documents')
+      .insert({
+        folder_id: folderId,
+        document_id: documentId
+      });
+      
+    if (error) throw error;
+    
+    return true;
+  } catch (error: any) {
+    toast.error("Failed to add document to folder", { description: error.message });
+    throw error;
+  }
+}
+
+export async function removeDocumentFromFolder(folderId: string, documentId: string) {
+  try {
+    const { error } = await supabase
+      .from('folder_documents')
+      .delete()
+      .eq('folder_id', folderId)
+      .eq('document_id', documentId);
+      
+    if (error) throw error;
+    
+    return true;
+  } catch (error: any) {
+    toast.error("Failed to remove document from folder", { description: error.message });
+    throw error;
+  }
+}
+
+export async function listFolderDocuments(folderId: string | null) {
+  try {
+    let query;
+    
+    if (folderId) {
+      // Get documents in the specific folder
+      query = supabase
+        .from('documents')
+        .select(`
+          *,
+          folder_documents!inner(folder_id)
+        `)
+        .eq('folder_documents.folder_id', folderId);
+    } else {
+      // Get documents not in any folder
+      query = supabase
+        .from('documents')
+        .select('*')
+        .not('id', 'in', supabase
+          .from('folder_documents')
+          .select('document_id')
+        );
+    }
+    
+    const { data, error, count } = await query;
+    
+    if (error) throw error;
+    
+    return {
+      documents: data,
+      total: count || 0
+    };
+  } catch (error: any) {
+    console.error("Failed to fetch folder documents:", error);
+    return {
+      documents: [],
+      total: 0
+    };
+  }
+}

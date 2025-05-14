@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -11,8 +10,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { DocType } from '@/components/DocumentCard';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
-import { createDocument } from '@/lib/api';
+import { createDocument, addDocumentToFolder } from '@/lib/api';
 import { toast } from '@/components/ui/sonner';
+import { useQuery } from '@tanstack/react-query';
+import { listFolders } from '@/lib/api';
 
 const CreateDocument = () => {
   const navigate = useNavigate();
@@ -22,6 +23,13 @@ const CreateDocument = () => {
   const [tag, setTag] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedFolder, setSelectedFolder] = useState<string>('');
+  
+  // Get folders for selection
+  const { data: foldersData } = useQuery({
+    queryKey: ['folders'],
+    queryFn: () => listFolders(),
+  });
   
   // Handle tag addition
   const handleAddTag = () => {
@@ -43,7 +51,7 @@ const CreateDocument = () => {
     }
   };
   
-  // Handle document creation
+  // Update handleCreateDocument to include folder assignment
   const handleCreateDocument = async () => {
     if (!title.trim() || !content.trim()) {
       toast.error('Please provide both title and content');
@@ -61,6 +69,16 @@ const CreateDocument = () => {
         false, // not a template
         { tags } // metadata
       );
+      
+      // If a folder is selected, add the document to it
+      if (selectedFolder) {
+        try {
+          await addDocumentToFolder(selectedFolder, documentId);
+        } catch (error) {
+          console.error("Error adding to folder:", error);
+          // Continue even if adding to folder fails
+        }
+      }
       
       toast.success('Document created successfully');
       navigate(`/documents/${documentId}`);
@@ -110,6 +128,26 @@ const CreateDocument = () => {
                   <SelectItem value="plan">Plan</SelectItem>
                   <SelectItem value="doctrine">Doctrine</SelectItem>
                   <SelectItem value="reflection">Reflection</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="folder">Add to Folder (Optional)</Label>
+              <Select 
+                value={selectedFolder} 
+                onValueChange={setSelectedFolder}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select folder (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  {foldersData?.folders?.map(folder => (
+                    <SelectItem key={folder.id} value={folder.id}>
+                      {folder.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

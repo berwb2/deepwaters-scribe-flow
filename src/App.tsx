@@ -1,118 +1,49 @@
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from './components/theme-provider';
+import { Toaster } from '@/components/ui/sonner';
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { getCurrentUser } from "@/lib/api";
-import Index from "./pages/Index";
-import Dashboard from "./pages/Dashboard";
-import Documents from "./pages/Documents";
-import CreateDocument from "./pages/CreateDocument";
-import ViewDocument from "./pages/ViewDocument";
-import NotFound from "./pages/NotFound";
-import Login from "./pages/Login";
-import ResetPassword from "./pages/ResetPassword";
-import AccountSettings from "./pages/AccountSettings";
+import Index from './pages/Index';
+import Login from './pages/Login';
+import ResetPassword from './pages/ResetPassword';
+import Documents from './pages/Documents';
+import CreateDocument from './pages/CreateDocument';
+import ViewDocument from './pages/ViewDocument';
+import AccountSettings from './pages/AccountSettings';
+import Dashboard from './pages/Dashboard';
+import NotFound from './pages/NotFound';
+// Add new routes for folder management
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+import Folders from './pages/Folders';
+import FolderView from './pages/FolderView';
 
-// Protected route component
-const RequireAuth = ({ children }: { children: JSX.Element }) => {
-  const location = useLocation();
-  const { data: user, isLoading } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: getCurrentUser,
-  });
+function App() {
+  const queryClient = new QueryClient();
   
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-screen">
-      <div className="w-16 h-16 border-4 border-t-water rounded-full animate-spin"></div>
-    </div>;
-  }
-  
-  if (!user) {
-    // Redirect to login if not authenticated
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
-  return children;
-};
-
-// Redirect route component - redirects authenticated users away from login pages
-const RedirectIfAuth = ({ children }: { children: JSX.Element }) => {
-  const { data: user, isLoading } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: getCurrentUser,
-  });
-  
-  if (isLoading) {
-    return <div className="flex justify-center items-center h-screen">
-      <div className="w-16 h-16 border-4 border-t-water rounded-full animate-spin"></div>
-    </div>;
-  }
-  
-  if (user) {
-    // Redirect to dashboard if authenticated
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return children;
-};
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="light" storageKey="deepwaters-theme">
+        <Toaster />
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/dashboard" element={
-            <RequireAuth>
-              <Dashboard />
-            </RequireAuth>
-          } />
+          <Route path="/login" element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/documents" element={<Documents />} />
+          <Route path="/create" element={<CreateDocument />} />
           <Route path="/documents/:id" element={<ViewDocument />} />
-          <Route path="/create" element={
-            <RequireAuth>
-              <CreateDocument />
-            </RequireAuth>
-          } />
-          <Route path="/start" element={
-            <RequireAuth>
-              <CreateDocument />
-            </RequireAuth>
-          } />
-          <Route path="/account" element={
-            <RequireAuth>
-              <AccountSettings />
-            </RequireAuth>
-          } />
-          <Route path="/login" element={
-            <RedirectIfAuth>
-              <Login />
-            </RedirectIfAuth>
-          } />
-          <Route path="/reset-password" element={
-            <RedirectIfAuth>
-              <ResetPassword />
-            </RedirectIfAuth>
-          } />
+          <Route path="/account" element={<AccountSettings />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          
+          {/* Add new folder routes */}
+          <Route path="/folders" element={<Folders />} />
+          <Route path="/folders/:id" element={<FolderView />} />
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;

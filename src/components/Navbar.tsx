@@ -1,7 +1,8 @@
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
+import { useAuth } from '@/contexts/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,131 +10,84 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import Logo from './Logo';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getCurrentUser, signOut } from '@/lib/api';
-import GlobalSearch from './GlobalSearch';
-import { Menu, File, Calendar, Tag, LogOut, Settings, User } from 'lucide-react';
+} from "@/components/ui/dropdown-menu"
+import { Home, File, Search, User, Folder, LogOut } from 'lucide-react';
 
 const Navbar = () => {
-  const [scrolled, setScrolled] = useState(false);
-  const location = useLocation();
-  const queryClient = useQueryClient();
-  
-  // Get current user
-  const { data: user } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: getCurrentUser,
-  });
-  
-  // Handle scroll events to add shadow when scrolled
-  useEffect(() => {
-    const handleScroll = () => {
-      const isScrolled = window.scrollY > 10;
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled);
-      }
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [scrolled]);
-  
-  const isActive = (path: string) => {
-    if (path === '/') return location.pathname === '/';
-    return location.pathname.startsWith(path);
+  const { pathname } = useLocation();
+  const { user, signOut } = useAuth();
+
+  const getNavLinkClass = (path: string) => {
+    return pathname === path ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80' : 'hover:bg-secondary/50';
   };
-  
-  // Handle sign out
-  const handleSignOut = async () => {
-    await signOut();
-    queryClient.invalidateQueries({queryKey: ['currentUser']});
-  };
-  
+
   return (
-    <nav className={`sticky top-0 z-50 bg-background/95 backdrop-blur-sm ${scrolled ? 'border-b shadow-sm' : ''}`}>
-      <div className="container mx-auto px-4 flex items-center justify-between h-16">
-        <div className="flex items-center">
-          <Link to="/" className="mr-6">
-            <Logo size="small" />
-          </Link>
-          
-          <div className="hidden md:flex items-center space-x-1">
-            <Button variant={isActive('/') ? "default" : "ghost"} asChild>
-              <Link to="/">Home</Link>
-            </Button>
-            <Button variant={isActive('/documents') ? "default" : "ghost"} asChild>
-              <Link to="/documents">Documents</Link>
-            </Button>
-            {user && (
-              <Button variant={isActive('/create') ? "default" : "ghost"} asChild>
-                <Link to="/create">Create</Link>
+    <nav className="border-b bg-background">
+      <div className="flex h-16 items-center px-4">
+        <Link to="/" className="font-bold text-xl flex-none">
+          DeepWaters
+        </Link>
+        <div className="flex-1 flex justify-center">
+          <ul className="flex space-x-1">
+            <li>
+              <Button variant="ghost" className={getNavLinkClass('/')} asChild>
+                <Link to="/">
+                  <Home className="h-4 w-4 mr-2" />
+                  <span>Home</span>
+                </Link>
               </Button>
-            )}
-          </div>
+            </li>
+            <li>
+              <Button variant="ghost" className={getNavLinkClass('/documents')} asChild>
+                <Link to="/documents">
+                  <File className="h-4 w-4 mr-2" />
+                  <span>Documents</span>
+                </Link>
+              </Button>
+            </li>
+            <li>
+              <Button variant="ghost" className={getNavLinkClass('/folders')} asChild>
+                <Link to="/folders">
+                  <Folder className="h-4 w-4 mr-2" />
+                  <span>Folders</span>
+                </Link>
+              </Button>
+            </li>
+          </ul>
         </div>
-        
-        <div className="flex items-center space-x-2">
-          <GlobalSearch />
-          
+        <div className="flex-none">
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="ml-2">
-                  <User className="h-4 w-4" />
-                  <span className="ml-2 hidden sm:inline-block">
-                    {user.user_metadata?.display_name || user.email?.split('@')[0]}
-                  </span>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.user_metadata?.name} />
+                    <AvatarFallback>{user?.user_metadata?.name?.charAt(0)}</AvatarFallback>
+                  </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuLabel>{user?.user_metadata?.name}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to="/documents" className="w-full flex items-center">
-                    <File className="mr-2 h-4 w-4" /> My Documents
+                  <Link to="/account">
+                    <User className="h-4 w-4 mr-2" />
+                    <span>My Account</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/account" className="w-full flex items-center">
-                    <Settings className="mr-2 h-4 w-4" /> Account Settings
+                <DropdownMenuItem asChild onClick={() => signOut()}>
+                  <Link to="/login">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    <span>Sign Out</span>
                   </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" /> Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Button variant="default" asChild>
-              <Link to="/login">Sign In</Link>
-            </Button>
+            <Link to="/login">
+              <Button>Sign In</Button>
+            </Link>
           )}
-          
-          <div className="md:hidden">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Menu className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link to="/" className="w-full">Home</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/documents" className="w-full">Documents</Link>
-                </DropdownMenuItem>
-                {user && (
-                  <DropdownMenuItem asChild>
-                    <Link to="/create" className="w-full">Create</Link>
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
         </div>
       </div>
     </nav>
