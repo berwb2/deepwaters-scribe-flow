@@ -5,7 +5,7 @@ import Navbar from '@/components/Navbar';
 import TableOfContents from '@/components/TableOfContents';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DocType } from '@/components/DocumentCard';
+import { DocType } from '@/types/documents';
 import { ArrowLeft, Download, File, Info, Trash } from 'lucide-react';
 import { getDocument, deleteDocument, getDocumentTags } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';

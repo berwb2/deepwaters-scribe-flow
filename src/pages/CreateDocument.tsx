@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -7,7 +8,7 @@ import RichTextEditor from '@/components/RichTextEditor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { DocType } from '@/components/DocumentCard';
+import { DocType } from '@/types/documents';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
 import { createDocument, addDocumentToFolder } from '@/lib/api';

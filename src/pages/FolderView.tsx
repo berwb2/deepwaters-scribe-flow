@@ -1,11 +1,9 @@
-
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import DocumentCard from '@/components/DocumentCard';
 import { Button } from "@/components/ui/button";
 import { Badge } from '@/components/ui/badge';
-import { FolderPriority, FolderCategory } from '@/components/FolderCard';
 import { ArrowLeft, FolderEdit, FolderX, Plus, Search } from 'lucide-react';
 import { getFolder, listFolderDocuments, addDocumentToFolder, removeDocumentFromFolder, deleteFolder } from '@/lib/api';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -20,6 +18,18 @@ interface MoveDocumentDialogProps {
   onClose: () => void;
   folderId: string;
   onDocumentAdded: () => void;
+}
+
+// Define custom type for folder priority display
+type FolderPriorityStyle = 'low' | 'medium' | 'high';
+
+// Define custom type for folder category display
+type FolderCategory = 'personal' | 'work' | 'school' | 'project' | 'other';
+
+// Update DocumentCard interface to include optional contextMenuItems
+interface DocumentCardProps {
+  document: any;
+  contextMenuItems?: { label: string; onClick: () => Promise<void> }[];
 }
 
 const MoveDocumentDialog: React.FC<MoveDocumentDialogProps> = ({
@@ -130,14 +140,14 @@ const FolderView = () => {
   ) || [];
   
   // Map priority to styles
-  const priorityStyles = {
+  const priorityStyles: Record<FolderPriorityStyle, string> = {
     low: "bg-blue-100 text-blue-800",
     medium: "bg-yellow-100 text-yellow-800",
     high: "bg-red-100 text-red-800"
   };
   
   // Map category to display names
-  const categoryNames = {
+  const categoryNames: Record<FolderCategory, string> = {
     personal: "Personal",
     work: "Work",
     school: "School",
