@@ -75,12 +75,12 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onComplete, onDelete, onEdit 
     <div className={`flex items-center justify-between py-2 px-3 border ${
       task.completed ? 'border-gray-200' : 'border-water-light'
     } rounded-md ${getBackgroundColor()} transition-colors duration-200 shadow-sm`}>
-      <div className="flex items-center space-x-3 flex-grow">
+      <div className="flex items-center space-x-3 flex-grow min-w-0">
         <Checkbox 
           checked={task.completed} 
           onCheckedChange={handleComplete}
           id={`task-${task.id}`}
-          className={`h-5 w-5 ${task.completed ? 'text-green-500' : 'text-water-deep'}`}
+          className={`h-5 w-5 flex-shrink-0 ${task.completed ? 'text-green-500' : 'text-water-deep'}`}
         />
         {isEditing ? (
           <Input
@@ -99,14 +99,15 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onComplete, onDelete, onEdit 
         ) : (
           <label 
             htmlFor={`task-${task.id}`} 
-            className={`flex-grow cursor-pointer ${task.completed ? 'line-through text-muted-foreground' : ''}`}
+            className={`flex-grow cursor-pointer overflow-hidden text-ellipsis ${task.completed ? 'line-through text-muted-foreground' : ''}`}
+            style={{ overflowWrap: 'break-word', wordWrap: 'break-word', wordBreak: 'break-word', maxWidth: '100%' }}
           >
             {task.title}
           </label>
         )}
         
         {task.due_date && !isEditing && (
-          <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${
+          <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 flex-shrink-0 ${
             task.completed ? 'bg-gray-100 text-muted-foreground' : 
             new Date(task.due_date) < new Date() ? 'bg-red-100 text-red-600' : 
             isDueSoon() ? 'bg-amber-100 text-amber-700' : 'bg-blue-50 text-water-deep'
@@ -117,7 +118,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onComplete, onDelete, onEdit 
         )}
       </div>
       
-      <div className="flex space-x-1">
+      <div className="flex space-x-1 flex-shrink-0 ml-2">
         <Button 
           variant="ghost" 
           size="icon" 

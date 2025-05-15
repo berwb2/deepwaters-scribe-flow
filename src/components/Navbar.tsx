@@ -1,96 +1,120 @@
 
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-import { useAuth } from '@/contexts/AuthContext';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Moon, Sun, Menu, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useTheme } from '@/components/theme-provider';
+import Logo from '@/components/Logo';
+import GlobalSearch from '@/components/GlobalSearch';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Home, File, Search, User, Folder, LogOut } from 'lucide-react';
-import Logo from '@/components/Logo';
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Navbar = () => {
-  const { pathname } = useLocation();
-  const { user, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const getNavLinkClass = (path: string) => {
-    return pathname === path ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80' : 'hover:bg-secondary/50';
+  const handleThemeToggle = () => {
+    setTheme(theme === 'dark' ? 'light' : 'dark');
   };
-
+  
+  // For demo purposes
+  // In a real app, this would come from authentication state
+  const user = {
+    name: 'User',
+    initials: 'U'
+  };
+  
   return (
-    <nav className="border-b bg-background">
-      <div className="flex h-16 items-center px-4">
-        <Link to="/" className="flex-none">
-          <Logo size="small" />
-        </Link>
-        <div className="flex-1 flex justify-center">
-          <ul className="flex space-x-1">
-            <li>
-              <Button variant="ghost" className={getNavLinkClass('/')} asChild>
-                <Link to="/">
-                  <Home className="h-4 w-4 mr-2" />
-                  <span>Home</span>
-                </Link>
-              </Button>
-            </li>
-            <li>
-              <Button variant="ghost" className={getNavLinkClass('/documents')} asChild>
-                <Link to="/documents">
-                  <File className="h-4 w-4 mr-2" />
-                  <span>Documents</span>
-                </Link>
-              </Button>
-            </li>
-            <li>
-              <Button variant="ghost" className={getNavLinkClass('/folders')} asChild>
-                <Link to="/folders">
-                  <Folder className="h-4 w-4 mr-2" />
-                  <span>Folders</span>
-                </Link>
-              </Button>
-            </li>
-          </ul>
-        </div>
-        <div className="flex-none">
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.user_metadata?.avatar_url} alt={user?.user_metadata?.name} />
-                    <AvatarFallback>{user?.user_metadata?.name?.charAt(0) || 'U'}</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>{user?.user_metadata?.name || 'User'}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/account">
-                    <User className="h-4 w-4 mr-2" />
-                    <span>My Account</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => signOut()}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  <span>Sign Out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Link to="/login">
-              <Button>Sign In</Button>
-            </Link>
+    <header className="border-b sticky top-0 z-50 bg-background/80 backdrop-blur-sm">
+      <div className="container mx-auto px-4 flex h-16 items-center justify-between">
+        <div className="flex items-center">
+          {isMobile && (
+            <Button variant="ghost" size="icon" className="mr-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </Button>
           )}
+          <Link to="/" className="flex items-center space-x-2">
+            <Logo className="h-7 w-7" />
+            {!isMobile && <span className="font-serif text-lg font-medium">DeepWaters</span>}
+          </Link>
+        </div>
+        
+        {!isMobile && (
+          <nav className="mx-6 flex items-center space-x-4 lg:space-x-6 flex-1 justify-center">
+            <Button asChild variant="ghost">
+              <Link to="/dashboard">Dashboard</Link>
+            </Button>
+            <Button asChild variant="ghost">
+              <Link to="/documents">Documents</Link>
+            </Button>
+            <Button asChild variant="ghost">
+              <Link to="/folders">Folders</Link>
+            </Button>
+          </nav>
+        )}
+        
+        <div className="flex items-center space-x-4">
+          {!isMobile && <GlobalSearch />}
+          
+          <Button variant="ghost" size="icon" onClick={handleThemeToggle}>
+            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          </Button>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback>{user.initials}</AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem className="font-medium">{user.name}</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/account')}>
+                Account Settings
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/documents')}>
+                My Documents
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => navigate('/login')}>
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
-    </nav>
+      
+      {/* Mobile Navigation Menu */}
+      {isMobile && mobileMenuOpen && (
+        <div className="border-t px-4 py-3 bg-background">
+          <div className="space-y-1">
+            <Link to="/dashboard" className="block py-2 px-3 rounded-md hover:bg-accent">
+              Dashboard
+            </Link>
+            <Link to="/documents" className="block py-2 px-3 rounded-md hover:bg-accent">
+              Documents
+            </Link>
+            <Link to="/folders" className="block py-2 px-3 rounded-md hover:bg-accent">
+              Folders
+            </Link>
+            <div className="pt-2">
+              <GlobalSearch />
+            </div>
+          </div>
+        </div>
+      )}
+    </header>
   );
 };
 

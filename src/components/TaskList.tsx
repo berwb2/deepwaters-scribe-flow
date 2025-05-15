@@ -128,36 +128,38 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onAddTask, onUpdateTask, onD
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap sm:flex-nowrap">
         <Input
           placeholder="Add new task..."
           value={newTaskTitle}
           onChange={(e) => setNewTaskTitle(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="flex-grow"
+          className="flex-grow min-w-0"
         />
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="icon">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
-            <CalendarComponent
-              mode="single"
-              selected={dueDate}
-              onSelect={setDueDate}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
-        <Button onClick={handleAddTask} disabled={!newTaskTitle.trim()}>
-          <Plus className="h-4 w-4 mr-1" /> Add
-        </Button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="icon" className="flex-shrink-0">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <CalendarComponent
+                mode="single"
+                selected={dueDate}
+                onSelect={setDueDate}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          <Button onClick={handleAddTask} disabled={!newTaskTitle.trim()} className="flex-shrink-0">
+            <Plus className="h-4 w-4 mr-1" /> Add
+          </Button>
+        </div>
       </div>
 
       {dueDate && (
-        <div className="text-sm text-water-deep flex items-center">
+        <div className="text-sm text-water-deep flex items-center flex-wrap">
           <Calendar className="h-4 w-4 mr-1" />
           Due date: {format(dueDate, "MMM d, yyyy")}
           <Button

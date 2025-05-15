@@ -75,6 +75,9 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    word-break: break-word;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -162,4 +165,34 @@
     0% { transform: translateY(0) scale(1); }
     100% { transform: translateY(-10px) scale(1.05); }
   }
+
+  /* Make document text content wrap */
+  .document-content {
+    @apply break-words whitespace-normal;
+    max-width: 100%;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+}
+
+/* ProseMirror editor mobile improvements */
+.ProseMirror {
+  @apply break-words whitespace-normal max-w-full;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Ensure headings wrap properly on mobile */
+.ProseMirror h1, .ProseMirror h2, .ProseMirror h3,
+.document-content h1, .document-content h2, .document-content h3 {
+  @apply break-words whitespace-normal;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+/* Improve code blocks on mobile */
+.ProseMirror pre, .document-content pre {
+  @apply overflow-x-auto whitespace-pre-wrap;
+  max-width: 100%;
 }

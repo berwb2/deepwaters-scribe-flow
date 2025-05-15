@@ -1,87 +1,47 @@
 
-import React, { useRef, useState, useEffect } from 'react';
-import CollapsibleSection from './CollapsibleSection';
-import { Link } from 'react-router-dom';
-import { searchDocuments } from '@/lib/api';
-import hljs from 'highlight.js';
+import React from 'react';
+import { DocumentMeta } from '@/types/documents';
+import 'highlight.js/styles/github.css';
 
 interface DocumentRendererProps {
-  content: string;
-  onSectionClick?: (id: string) => void;
+  document: DocumentMeta;
+  className?: string;
 }
 
-interface TocItem {
-  id: string;
-  text: string;
-  level: number;
-}
+// This component is read-only and used for rendering the document content
+const DocumentRenderer: React.FC<DocumentRendererProps> = ({ 
+  document, 
+  className = "" 
+}) => {
+  if (!document || !document.content) {
+    return <div className="text-muted-foreground">No content available</div>;
+  }
 
-const DocumentRenderer: React.FC<DocumentRendererProps> = ({ content, onSectionClick }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [tocItems, setTocItems] = useState<TocItem[]>([]);
-  
-  // Process HTML content to add collapsible sections and other enhancements
-  useEffect(() => {
-    if (!containerRef.current) return;
-    
-    // Parse the HTML content
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(content, 'text/html');
-    
-    // Process headings
-    const headings = doc.querySelectorAll('h1, h2, h3');
-    const tocItems: TocItem[] = [];
-    
-    headings.forEach((heading, index) => {
-      const level = parseInt(heading.tagName.charAt(1));
-      const text = heading.textContent || '';
-      const id = text.toLowerCase().replace(/\s+/g, '-') || `heading-${index}`;
+  // For JSON documents, parse and prettify
+  if (document.content_type === 'json') {
+    try {
+      const jsonObject = typeof document.content === 'string' 
+        ? JSON.parse(document.content) 
+        : document.content;
       
-      heading.id = id;
-      tocItems.push({ id, text, level });
-    });
-    
-    setTocItems(tocItems);
-    
-    // Process code blocks
-    const codeBlocks = doc.querySelectorAll('pre code');
-    codeBlocks.forEach((block) => {
-      hljs.highlightElement(block as HTMLElement);
-    });
-    
-    // Process internal links
-    const links = doc.querySelectorAll('a[href^="doc:"]');
-    links.forEach((link) => {
-      const href = link.getAttribute('href');
-      if (href && href.startsWith('doc:')) {
-        const docId = href.replace('doc:', '');
-        link.setAttribute('data-document-id', docId);
-        link.classList.add('internal-link');
-      }
-    });
-    
-    // Update the content
-    if (containerRef.current) {
-      containerRef.current.innerHTML = doc.body.innerHTML;
+      const prettyJson = JSON.stringify(jsonObject, null, 2);
       
-      // Add click handlers to internal links
-      const internalLinks = containerRef.current.querySelectorAll('.internal-link');
-      internalLinks.forEach((link) => {
-        link.addEventListener('click', (e) => {
-          e.preventDefault();
-          const docId = link.getAttribute('data-document-id');
-          if (docId) {
-            window.location.href = `/documents/${docId}`;
-          }
-        });
-      });
+      return (
+        <pre className={`bg-muted p-4 rounded-lg overflow-x-auto ${className} document-content`}>
+          <code>{prettyJson}</code>
+        </pre>
+      );
+    } catch (e) {
+      return <div className="text-destructive">Invalid JSON document</div>;
     }
-  }, [content]);
-  
+  }
+
+  // For HTML content (like from ProseMirror)
   return (
-    <div ref={containerRef} className="prose prose-blue max-w-none">
-      {/* Content will be rendered here */}
-    </div>
+    <div 
+      className={`prose dark:prose-invert max-w-none ${className} document-content`}
+      dangerouslySetInnerHTML={{ __html: document.content as string }}
+    />
   );
 };
 
