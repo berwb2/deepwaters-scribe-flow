@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -14,17 +13,29 @@ import { useQuery } from '@tanstack/react-query';
 import { listDocuments, getCurrentUser } from '@/lib/api';
 import LeaderboardDialog from '@/components/gamification/LeaderboardDialog';
 import { DocumentMeta } from '@/types/documents';
+import { SoundToggle } from '@/components/ui/sound-toggle';
 
-// Mock Tasks (to be replaced with API integration)
-const initialTasks: Task[] = [
-  { id: '1', title: 'Create project structure', completed: true },
-  { id: '2', title: 'Implement search functionality', completed: false },
-  { id: '3', title: 'Add task management', completed: false, due_date: new Date().toISOString() },
-];
+// Task persistence with local storage
+const getStoredTasks = (): Task[] => {
+  try {
+    const storedTasks = localStorage.getItem('deepwaters-tasks');
+    if (storedTasks) {
+      return JSON.parse(storedTasks);
+    }
+  } catch (error) {
+    console.error('Error parsing stored tasks:', error);
+  }
+  return []; // Default to empty array if no tasks or error
+};
 
 const Dashboard = () => {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>(getStoredTasks);
   const [date, setDate] = useState<Date | undefined>(new Date());
+  
+  // Save tasks to local storage whenever they change
+  useEffect(() => {
+    localStorage.setItem('deepwaters-tasks', JSON.stringify(tasks));
+  }, [tasks]);
   
   // Get current user
   const { data: user } = useQuery({
@@ -82,6 +93,7 @@ const Dashboard = () => {
           </div>
           
           <div className="flex gap-3 mt-4 md:mt-0">
+            <SoundToggle />
             <LeaderboardDialog />
             
             <Button asChild>

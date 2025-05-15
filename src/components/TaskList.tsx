@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +8,7 @@ import { format } from "date-fns";
 import TaskItem, { Task } from './TaskItem';
 import { TaskAchievement } from './gamification';
 import { toast } from '@/components/ui/use-toast';
+import { useSound } from '@/contexts/SoundContext';
 
 interface TaskListProps {
   tasks: Task[];
@@ -29,6 +29,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onAddTask, onUpdateTask, onD
     const stored = localStorage.getItem('lastCompletionDate');
     return stored || '';
   });
+  const { playSound } = useSound();
 
   const handleAddTask = () => {
     if (newTaskTitle.trim()) {
@@ -40,6 +41,8 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onAddTask, onUpdateTask, onD
         });
         setNewTaskTitle('');
         setDueDate(undefined);
+        // Play bubble sound for new task creation
+        playSound('bubble');
         toast({
           title: "Task added",
           description: "Your task has been created successfully."
@@ -66,6 +69,9 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, onAddTask, onUpdateTask, onD
       onUpdateTask(id, { completed });
       
       if (completed) {
+        // Play droplet sound when task completed
+        playSound('droplet');
+        
         // Trigger gamification reward
         setTaskCompleted(true);
         setTimeout(() => setTaskCompleted(false), 100);
