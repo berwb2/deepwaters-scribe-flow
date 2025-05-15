@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RichTextEditor } from '@/components/RichTextEditor';
+import RichTextEditor from '@/components/RichTextEditor';
 import { useDocumentActions } from '@/hooks/use-document-actions';
 
 const CreateDocument = () => {
@@ -54,7 +54,7 @@ const CreateDocument = () => {
               <Label htmlFor="content" className="text-blue-700">Document Content</Label>
               <div className="min-h-[300px] border rounded-md border-blue-200">
                 <RichTextEditor 
-                  value={content} 
+                  content={content} 
                   onChange={setContent} 
                   placeholder="Start writing your document..." 
                 />
