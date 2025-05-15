@@ -19,6 +19,8 @@ import NotFound from './pages/NotFound';
 // Add new routes for folder management
 import Folders from './pages/Folders';
 import FolderView from './pages/FolderView';
+// Add new Calendar route
+import Calendar from './pages/Calendar';
 
 // Component that plays the welcome sound
 function AppWithSound() {
@@ -43,6 +45,9 @@ function AppWithSound() {
       {/* Add new folder routes */}
       <Route path="/folders" element={<Folders />} />
       <Route path="/folders/:id" element={<FolderView />} />
+      
+      {/* Add new calendar route */}
+      <Route path="/calendar" element={<Calendar />} />
       
       <Route path="*" element={<NotFound />} />
     </Routes>

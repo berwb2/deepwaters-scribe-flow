@@ -139,9 +139,17 @@ const Dashboard = () => {
                         selected={date}
                         onSelect={setDate}
                       />
-                      <p className="text-center text-muted-foreground text-sm mt-4">
-                        Select a date to view or create scheduled items
-                      </p>
+                      <div className="text-center mt-4">
+                        <p className="text-muted-foreground text-sm mb-4">
+                          Select a date to view or create scheduled items
+                        </p>
+                        <Button asChild>
+                          <Link to="/calendar">
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            Full Calendar View
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
                   </TabsContent>
                 </Tabs>
@@ -194,6 +202,11 @@ const Dashboard = () => {
                 <Button variant="outline" className="w-full justify-start" asChild>
                   <Link to="/create">
                     <Plus className="mr-2 h-4 w-4" /> New Document
+                  </Link>
+                </Button>
+                <Button variant="outline" className="w-full justify-start" asChild>
+                  <Link to="/calendar">
+                    <CalendarIcon className="mr-2 h-4 w-4" /> Calendar
                   </Link>
                 </Button>
                 <Button variant="outline" className="w-full justify-start" asChild>

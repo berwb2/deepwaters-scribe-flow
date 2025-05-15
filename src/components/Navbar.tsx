@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Moon, Sun, Menu, X } from 'lucide-react';
+import { Moon, Sun, Menu, X, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/components/theme-provider';
 import Logo from '@/components/Logo';
@@ -59,6 +59,9 @@ const Navbar = () => {
             <Button asChild variant="ghost">
               <Link to="/folders">Folders</Link>
             </Button>
+            <Button asChild variant="ghost">
+              <Link to="/calendar">Calendar</Link>
+            </Button>
           </nav>
         )}
         
@@ -107,6 +110,9 @@ const Navbar = () => {
             </Link>
             <Link to="/folders" className="block py-2 px-3 rounded-md hover:bg-accent">
               Folders
+            </Link>
+            <Link to="/calendar" className="block py-2 px-3 rounded-md hover:bg-accent">
+              Calendar
             </Link>
             <div className="pt-2">
               <GlobalSearch />
