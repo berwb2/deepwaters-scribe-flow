@@ -6,12 +6,14 @@ import 'highlight.js/styles/github.css';
 interface DocumentRendererProps {
   document: DocumentMeta;
   className?: string;
+  onSectionClick?: (id: string) => void;
 }
 
 // This component is read-only and used for rendering the document content
 const DocumentRenderer: React.FC<DocumentRendererProps> = ({ 
   document, 
-  className = "" 
+  className = "",
+  onSectionClick
 }) => {
   if (!document || !document.content) {
     return <div className="text-muted-foreground">No content available</div>;
@@ -41,6 +43,16 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
     <div 
       className={`prose dark:prose-invert max-w-none ${className} document-content`}
       dangerouslySetInnerHTML={{ __html: document.content as string }}
+      onClick={(e) => {
+        if (onSectionClick && e.target instanceof HTMLElement) {
+          // If the clicked element has an ID, call the onSectionClick handler
+          const targetEl = e.target as HTMLElement;
+          const headingEl = targetEl.closest('h1, h2, h3, h4, h5, h6');
+          if (headingEl && headingEl.id) {
+            onSectionClick(headingEl.id);
+          }
+        }
+      }}
     />
   );
 };

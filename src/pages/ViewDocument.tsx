@@ -1,4 +1,3 @@
-
 import React, { useRef, useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
@@ -166,7 +165,7 @@ const ViewDocument = () => {
               
               <div ref={contentRef}>
                 <DocumentRenderer 
-                  content={document.content}
+                  document={document}
                   onSectionClick={scrollToSection}
                 />
               </div>
