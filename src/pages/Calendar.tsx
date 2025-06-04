@@ -123,12 +123,13 @@ const CalendarPage = () => {
     
     try {
       // Create a document in the backend
-      const resultId = await createDocumentWithSound({
+      const resultId = await createDocumentWithSound(
         title,
         content,
-        content_type: 'note',
-        metadata: { calendarDate: dateStr }
-      });
+        'note',
+        false,
+        { calendarDate: dateStr }
+      );
       
       // Also add to our local state for calendar display
       const newNote = {
