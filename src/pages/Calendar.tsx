@@ -20,6 +20,7 @@ import { useDocumentActions } from '@/hooks/use-document-actions';
 
 interface DateTask extends Task {
   date: string; // ISO string date format
+  priority: 'low' | 'medium' | 'high';
 }
 
 interface DateNote {
@@ -100,11 +101,11 @@ const CalendarPage = () => {
   const tasksForSelectedDate = selectedDateStr ? tasksByDate[selectedDateStr] || [] : [];
   const notesForSelectedDate = selectedDateStr ? notesByDate[selectedDateStr] || [] : [];
 
-  const handleAddTask = (task: Omit<Task, 'id'>) => {
+  const handleAddTask = (task: Omit<DateTask, 'id' | 'date'>) => {
     if (!date) return;
     
     const dateStr = date.toISOString().split('T')[0];
-    const newTask = {
+    const newTask: DateTask = {
       ...task,
       id: `task-${Date.now()}`, // Generate a simple unique ID
       date: dateStr,
@@ -122,7 +123,7 @@ const CalendarPage = () => {
     
     try {
       // Create a document in the backend
-      const result = await createDocumentWithSound({
+      const resultId = await createDocumentWithSound({
         title,
         content,
         content_type: 'note',
@@ -131,7 +132,7 @@ const CalendarPage = () => {
       
       // Also add to our local state for calendar display
       const newNote = {
-        id: result.id || `note-${Date.now()}`,
+        id: resultId || `note-${Date.now()}`,
         title,
         content, 
         date: dateStr,
@@ -146,7 +147,7 @@ const CalendarPage = () => {
     }
   };
 
-  const handleUpdateTask = (id: string, updates: Partial<Task>) => {
+  const handleUpdateTask = (id: string, updates: Partial<DateTask>) => {
     setDateTasks(dateTasks.map(task => 
       task.id === id ? { ...task, ...updates } : task
     ));
