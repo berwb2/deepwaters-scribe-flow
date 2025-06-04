@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Moon, Sun, Menu, X, Calendar } from 'lucide-react';
@@ -43,7 +42,7 @@ const Navbar = () => {
             </Button>
           )}
           <Link to="/" className="flex items-center">
-            <Logo size="small" showText={!isMobile} />
+            <Logo size="small" />
           </Link>
         </div>
         

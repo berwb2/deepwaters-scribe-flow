@@ -6,6 +6,10 @@ import CodeBlock from '@tiptap/extension-code-block';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
+import Table from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableHeader from '@tiptap/extension-table-header';
+import TableCell from '@tiptap/extension-table-cell';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
 
@@ -44,10 +48,21 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         placeholder,
       }),
       Underline,
+      Table.configure({
+        resizable: true,
+      }),
+      TableRow,
+      TableHeader,
+      TableCell,
     ],
     content,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
+    },
+    editorProps: {
+      attributes: {
+        class: 'prose prose-blue max-w-none focus:outline-none',
+      },
     },
   });
 
@@ -66,13 +81,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   }
 
   return (
-    <div className="border rounded-md relative">
+    <div className="border rounded-lg shadow-sm bg-background relative">
       <EditorToolbar editor={editor} />
       {editor && <EditorBubbleMenu editor={editor} />}
-      <EditorContent 
-        editor={editor} 
-        className="prose prose-blue max-w-none p-4 min-h-[12rem] focus-visible:outline-none"
-      />
+      <div className="p-6">
+        <EditorContent 
+          editor={editor} 
+          className="min-h-[24rem] focus-visible:outline-none prose prose-blue prose-lg max-w-none"
+        />
+      </div>
       <EditorStylesheet />
     </div>
   );
