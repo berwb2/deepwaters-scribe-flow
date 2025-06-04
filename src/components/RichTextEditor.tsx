@@ -8,7 +8,6 @@ import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
 import Table from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
-import TableHeader from '@tiptap/extension-table-header';
 import TableCell from '@tiptap/extension-table-cell';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
@@ -52,7 +51,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         resizable: true,
       }),
       TableRow,
-      TableHeader,
       TableCell,
     ],
     content,
