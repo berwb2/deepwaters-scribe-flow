@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider } from './contexts/AuthContext';
 import { SoundProvider, useSound } from './contexts/SoundContext';
 
@@ -32,25 +33,27 @@ function AppWithSound() {
   }, []);
   
   return (
-    <Routes>
-      <Route path="/" element={<Index />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/documents" element={<Documents />} />
-      <Route path="/create" element={<CreateDocument />} />
-      <Route path="/documents/:id" element={<ViewDocument />} />
-      <Route path="/account" element={<AccountSettings />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      
-      {/* Add new folder routes */}
-      <Route path="/folders" element={<Folders />} />
-      <Route path="/folders/:id" element={<FolderView />} />
-      
-      {/* Add new calendar route */}
-      <Route path="/calendar" element={<Calendar />} />
-      
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <TooltipProvider>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/documents" element={<Documents />} />
+        <Route path="/create" element={<CreateDocument />} />
+        <Route path="/documents/:id" element={<ViewDocument />} />
+        <Route path="/account" element={<AccountSettings />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        
+        {/* Add new folder routes */}
+        <Route path="/folders" element={<Folders />} />
+        <Route path="/folders/:id" element={<FolderView />} />
+        
+        {/* Add new calendar route */}
+        <Route path="/calendar" element={<Calendar />} />
+        
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </TooltipProvider>
   );
 }
 
