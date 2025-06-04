@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import Navbar from '@/components/Navbar';
 import DocumentCard from '@/components/DocumentCard';
-import { Plus, Search, FolderPlus } from 'lucide-react';
+import { Plus, Search, FolderPlus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -14,6 +13,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { listDocuments, getCurrentUser, listFolders, addDocumentToFolder } from '@/lib/api';
 import { DocumentMeta } from '@/types/documents';
 import { toast } from '@/components/ui/sonner';
+import { 
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 
 // Add a new interface for the move to folder dialog
 interface MoveToFolderDialogProps {
@@ -105,6 +112,8 @@ const Documents = () => {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [selectedDocumentId, setSelectedDocumentId] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 12; // Increased from default 20 to show more documents per page
   
   // Get current user
   const { data: user } = useQuery({
@@ -112,12 +121,14 @@ const Documents = () => {
     queryFn: getCurrentUser,
   });
   
-  // Fetch documents
+  // Fetch documents with pagination
   const { data, isLoading } = useQuery({
-    queryKey: ['documents', selectedType],
+    queryKey: ['documents', selectedType, currentPage],
     queryFn: () => listDocuments(
       selectedType ? { contentType: selectedType } : {},
-      { field: 'updated_at', direction: 'desc' }
+      { field: 'updated_at', direction: 'desc' },
+      currentPage,
+      pageSize
     ),
     enabled: !!user, // Only fetch if user is authenticated
   });
@@ -134,6 +145,21 @@ const Documents = () => {
     setMoveDialogOpen(true);
   };
 
+  // Handle page changes
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Reset page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedType, searchTerm]);
+
+  const totalPages = data?.totalPages || 0;
+  const currentResults = filteredDocuments.length;
+  const totalResults = data?.total || 0;
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -142,7 +168,14 @@ const Documents = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
             <h1 className="text-3xl font-serif font-medium mb-2">My Documents</h1>
-            <p className="text-muted-foreground">Browse and manage your plans, doctrines, and reflections</p>
+            <p className="text-muted-foreground">
+              Browse and manage your plans, doctrines, and reflections
+              {totalResults > 0 && (
+                <span className="ml-2 text-sm">
+                  ({currentResults} of {totalResults} documents)
+                </span>
+              )}
+            </p>
           </div>
           
           <Button className="mt-4 md:mt-0" asChild>
@@ -213,20 +246,70 @@ const Documents = () => {
                 <p className="text-muted-foreground">Loading documents...</p>
               </div>
             ) : filteredDocuments.length > 0 ? (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredDocuments.map((doc) => (
-                  <DocumentCard 
-                    key={doc.id} 
-                    document={doc as DocumentMeta}
-                    contextMenuItems={[
-                      {
-                        label: 'Move to Folder',
-                        onClick: async () => handleMoveToFolder(doc.id)
-                      }
-                    ]}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                  {filteredDocuments.map((doc) => (
+                    <DocumentCard 
+                      key={doc.id} 
+                      document={doc as DocumentMeta}
+                      contextMenuItems={[
+                        {
+                          label: 'Move to Folder',
+                          onClick: async () => handleMoveToFolder(doc.id)
+                        }
+                      ]}
+                    />
+                  ))}
+                </div>
+                
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                        
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+                          
+                          return (
+                            <PaginationItem key={pageNum}>
+                              <PaginationLink
+                                onClick={() => handlePageChange(pageNum)}
+                                isActive={currentPage === pageNum}
+                                className="cursor-pointer"
+                              >
+                                {pageNum}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        })}
+                        
+                        <PaginationItem>
+                          <PaginationNext 
+                            onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-16">
                 <div className="text-xl font-medium mb-2">No documents found</div>

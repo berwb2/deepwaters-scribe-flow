@@ -42,9 +42,8 @@ const Navbar = () => {
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           )}
-          <Link to="/" className="flex items-center space-x-2">
-            <Logo className="h-7 w-7" />
-            {!isMobile && <span className="font-serif text-lg font-medium">DeepWaters</span>}
+          <Link to="/" className="flex items-center">
+            <Logo size="small" showText={!isMobile} />
           </Link>
         </div>
         

@@ -4,9 +4,10 @@ import React from 'react';
 type LogoProps = {
   className?: string;
   size?: 'small' | 'medium' | 'large';
+  showText?: boolean;
 };
 
-const Logo: React.FC<LogoProps> = ({ className = '', size = 'medium' }) => {
+const Logo: React.FC<LogoProps> = ({ className = '', size = 'medium', showText = true }) => {
   const sizeClasses = {
     small: 'h-8',
     medium: 'h-10',
@@ -24,9 +25,11 @@ const Logo: React.FC<LogoProps> = ({ className = '', size = 'medium' }) => {
           </div>
         </div>
       </div>
-      <span className={`ml-2 font-serif font-medium ${size === 'small' ? 'text-lg' : size === 'medium' ? 'text-xl' : 'text-2xl'}`}>
-        DeepWaters
-      </span>
+      {showText && (
+        <span className={`ml-2 font-serif font-medium ${size === 'small' ? 'text-lg' : size === 'medium' ? 'text-xl' : 'text-2xl'}`}>
+          DeepWaters
+        </span>
+      )}
     </div>
   );
 };
