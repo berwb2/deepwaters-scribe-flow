@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { useCreateDocument } from '@/hooks/use-document-actions';
+import { useDocumentActions } from '@/hooks/use-document-actions';
 import { addDocumentToFolder } from '@/lib/api';
 import { toast } from '@/components/ui/sonner';
 
@@ -27,7 +27,7 @@ const CreateDocumentInFolderDialog: React.FC<CreateDocumentInFolderDialogProps> 
   const [content, setContent] = useState('');
   const [contentType, setContentType] = useState('plan');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { createDocumentWithSound } = useCreateDocument();
+  const { createDocumentWithSound } = useDocumentActions();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
