@@ -46,12 +46,7 @@ const Dashboard = () => {
   // Fetch recent documents
   const { data: recentDocuments } = useQuery({
     queryKey: ['recentDocuments'],
-    queryFn: () => listDocuments(
-      {}, 
-      { field: 'updated_at', direction: 'desc' },
-      1,
-      6
-    ),
+    queryFn: () => listDocuments(),
     enabled: !!user,
   });
   

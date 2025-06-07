@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -123,17 +122,17 @@ const CalendarPage = () => {
     
     try {
       // Create a document in the backend
-      const resultId = await createDocumentWithSound(
+      const resultId = await createDocumentWithSound({
         title,
         content,
-        'note',
-        false,
-        { calendarDate: dateStr }
-      );
+        content_type: 'note',
+        is_template: false,
+        metadata: { calendarDate: dateStr }
+      });
       
       // Also add to our local state for calendar display
       const newNote = {
-        id: resultId || `note-${Date.now()}`,
+        id: resultId, // resultId is now a string
         title,
         content, 
         date: dateStr,

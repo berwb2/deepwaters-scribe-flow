@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { DocumentMeta, FolderMeta } from "@/types/documents";
 
@@ -457,22 +456,49 @@ export const callGrandStrategist = async (prompt: string) => {
 };
 
 // Document management functions
-export const listDocuments = async () => {
+export const listDocuments = async (
+  filters: { contentType?: string } = {},
+  sortBy: { field: string; direction: 'asc' | 'desc' } = { field: 'created_at', direction: 'desc' },
+  page: number = 1,
+  pageSize: number = 20
+) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('documents')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
+    .select('*', { count: 'exact' })
+    .eq('user_id', user.id);
+
+  // Apply content type filter if provided
+  if (filters.contentType) {
+    query = query.eq('content_type', filters.contentType);
+  }
+
+  // Apply sorting
+  query = query.order(sortBy.field, { ascending: sortBy.direction === 'asc' });
+
+  // Apply pagination
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  query = query.range(from, to);
+
+  const { data, error, count } = await query;
 
   if (error) {
     console.error('Error fetching documents:', error);
     throw error;
   }
 
-  return { documents: data || [] };
+  const totalPages = count ? Math.ceil(count / pageSize) : 0;
+
+  return { 
+    documents: data || [], 
+    total: count || 0,
+    totalPages,
+    currentPage: page,
+    pageSize
+  };
 };
 
 export const getDocument = async (documentId: string) => {

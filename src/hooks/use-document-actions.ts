@@ -17,7 +17,7 @@ export function useDocumentActions() {
       const result = await createDocument(documentData);
       playSound('bubble');
       toast.success('Document created successfully');
-      return result;
+      return result.id; // Return just the ID string
     } catch (error) {
       console.error('Error creating document:', error);
       toast.error('Failed to create document');

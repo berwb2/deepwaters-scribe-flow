@@ -37,7 +37,13 @@ const CreateDocument = () => {
     }
 
     try {
-      const documentId = await createDocumentWithSound(title, content, documentType);
+      const documentId = await createDocumentWithSound({
+        title,
+        content,
+        content_type: documentType,
+        is_template: false,
+        metadata: {}
+      });
       
       // If creating in a folder, add to folder after creation
       if (folderId) {

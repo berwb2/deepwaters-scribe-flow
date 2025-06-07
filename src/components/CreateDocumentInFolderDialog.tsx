@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -41,13 +40,13 @@ const CreateDocumentInFolderDialog: React.FC<CreateDocumentInFolderDialogProps> 
     
     try {
       // Create the document
-      const documentId = await createDocumentWithSound(
-        title.trim(),
-        content.trim() || "Start writing here...",
-        contentType,
-        false,
-        {}
-      );
+      const documentId = await createDocumentWithSound({
+        title: title.trim(),
+        content: content.trim() || "Start writing here...",
+        content_type: contentType,
+        is_template: false,
+        metadata: {}
+      });
       
       // Add the document to the folder
       await addDocumentToFolder(folderId, documentId);
