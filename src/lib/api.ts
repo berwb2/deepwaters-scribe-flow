@@ -849,7 +849,8 @@ export async function listFolderDocuments(folderId: string | null) {
   }
 }
 
-// Book management API functions
+// Book management API functions - temporarily commented out until schema is updated
+/*
 export async function createBook(bookData: { title: string; description?: string | null }) {
   try {
     const user = await getCurrentUser();
@@ -1028,4 +1029,46 @@ export async function reorderChapters(bookId: string, chapterUpdates: { id: stri
     toast.error("Failed to reorder chapters", { description: error.message });
     throw error;
   }
+}
+*/
+
+// Temporary placeholder functions for book management
+export async function createBook(bookData: { title: string; description?: string | null }) {
+  toast.error("Book functionality is temporarily unavailable", { description: "Database schema is being updated" });
+  throw new Error("Book functionality is temporarily unavailable");
+}
+
+export async function listBooks() {
+  return {
+    books: [],
+    total: 0
+  };
+}
+
+export async function getBook(bookId: string) {
+  return null;
+}
+
+export async function updateBook(bookId: string, updates: any) {
+  return null;
+}
+
+export async function deleteBook(bookId: string) {
+  return false;
+}
+
+export async function createChapter(chapterData: any) {
+  return null;
+}
+
+export async function updateChapter(chapterId: string, updates: any) {
+  return null;
+}
+
+export async function deleteChapter(chapterId: string) {
+  return false;
+}
+
+export async function reorderChapters(bookId: string, chapterUpdates: any[]) {
+  return false;
 }

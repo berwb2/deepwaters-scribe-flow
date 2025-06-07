@@ -6,7 +6,7 @@ import Navbar from '@/components/Navbar';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Book, Calendar, FileText } from 'lucide-react';
+import { Plus, Book, Calendar, FileText, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import CreateBookDialog from '@/components/CreateBookDialog';
 import { listBooks } from '@/lib/api';
@@ -55,6 +55,17 @@ const Books = () => {
           </Button>
         </div>
 
+        {/* Temporary notice about book functionality */}
+        <Card className="border-yellow-200 bg-yellow-50 mb-6">
+          <CardContent className="flex items-center py-4">
+            <AlertCircle className="h-5 w-5 text-yellow-600 mr-3" />
+            <div>
+              <p className="text-yellow-800 font-medium">Book functionality is temporarily unavailable</p>
+              <p className="text-yellow-700 text-sm">The database schema is being updated. This feature will be available shortly.</p>
+            </div>
+          </CardContent>
+        </Card>
+
         {books.length === 0 ? (
           <Card className="border-blue-100">
             <CardContent className="flex flex-col items-center justify-center py-12">
@@ -66,8 +77,9 @@ const Books = () => {
               <Button 
                 onClick={() => setIsCreateDialogOpen(true)}
                 className="bg-blue-500 hover:bg-blue-600 text-white"
+                disabled
               >
-                <Plus className="mr-2 h-4 w-4" /> Create Your First Book
+                <Plus className="mr-2 h-4 w-4" /> Create Your First Book (Coming Soon)
               </Button>
             </CardContent>
           </Card>
