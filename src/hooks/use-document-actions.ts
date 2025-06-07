@@ -6,9 +6,15 @@ import { toast } from '@/components/ui/sonner';
 export function useDocumentActions() {
   const { playSound } = useSound();
 
-  const createDocumentWithSound = async (title: string, content: string, contentType: string, isTemplate: boolean = false, metadata: any = {}) => {
+  const createDocumentWithSound = async (documentData: {
+    title: string;
+    content: string;
+    content_type: string;
+    is_template?: boolean;
+    metadata?: any;
+  }) => {
     try {
-      const result = await createDocument(title, content, contentType, isTemplate, metadata);
+      const result = await createDocument(documentData);
       playSound('bubble');
       toast.success('Document created successfully');
       return result;

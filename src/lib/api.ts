@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { DocumentMeta, FolderMeta } from "@/types/documents";
 
@@ -7,10 +8,42 @@ export const getCurrentUser = async () => {
   return user;
 };
 
-export const signIn = async (email: string) => {
-  const { data, error } = await supabase.auth.signInWithOtp({ email });
+export const signIn = async (email: string, password?: string, rememberMe?: boolean) => {
+  if (password) {
+    // Email + password sign in
+    const { data, error } = await supabase.auth.signInWithPassword({ 
+      email, 
+      password 
+    });
+    if (error) {
+      console.error('Error signing in:', error);
+      throw error;
+    }
+    return data;
+  } else {
+    // Magic link sign in
+    const { data, error } = await supabase.auth.signInWithOtp({ email });
+    if (error) {
+      console.error('Error signing in:', error);
+      throw error;
+    }
+    return data;
+  }
+};
+
+export const signUp = async (email: string, password: string, displayName: string) => {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        display_name: displayName
+      },
+      emailRedirectTo: `${window.location.origin}/`
+    }
+  });
   if (error) {
-    console.error('Error signing in:', error);
+    console.error('Error signing up:', error);
     throw error;
   }
   return data;
@@ -22,6 +55,66 @@ export const signOut = async () => {
     console.error('Error signing out:', error);
     throw error;
   }
+};
+
+export const requestPasswordReset = async (email: string) => {
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`
+  });
+  if (error) {
+    console.error('Error requesting password reset:', error);
+    throw error;
+  }
+  return data;
+};
+
+export const resetPassword = async (newPassword: string) => {
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword
+  });
+  if (error) {
+    console.error('Error resetting password:', error);
+    throw error;
+  }
+  return data;
+};
+
+// User Profile Functions
+export const getUserProfile = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching user profile:', error);
+    throw error;
+  }
+
+  return { ...data, email: user.email };
+};
+
+export const updateUserProfile = async (updates: { display_name?: string }) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', user.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating user profile:', error);
+    throw error;
+  }
+
+  return data;
 };
 
 // Folder Management Functions
@@ -74,7 +167,6 @@ export const listFolders = async () => {
       color,
       category,
       priority,
-      parent_id,
       created_at,
       user_id
     `)
@@ -107,6 +199,7 @@ export const listFolders = async () => {
   // Combine folders with document counts
   const folders = foldersData?.map(folder => ({
     ...folder,
+    parent_id: null, // Add default parent_id until column is added
     document_count: documentCounts[folder.id] || 0
   })) || [];
 
@@ -126,7 +219,6 @@ export const getFolder = async (folderId: string) => {
       color,
       category,
       priority,
-      parent_id,
       created_at,
       user_id
     `)
@@ -139,7 +231,7 @@ export const getFolder = async (folderId: string) => {
     throw error;
   }
 
-  return data;
+  return { ...data, parent_id: null }; // Add default parent_id until column is added
 };
 
 export const updateFolder = async (folderId: string, updates: Partial<FolderCreationData>) => {
@@ -290,6 +382,59 @@ export const listFolderDocuments = async (folderId: string) => {
 
   const documents = data?.map(item => item.documents).filter(Boolean) || [];
   return { documents };
+};
+
+// Document search function
+export const searchDocuments = async (query: string) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('documents')
+    .select('id, title, content, content_type')
+    .eq('user_id', user.id)
+    .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
+    .limit(10);
+
+  if (error) {
+    console.error('Error searching documents:', error);
+    throw error;
+  }
+
+  return data?.map(doc => ({
+    id: doc.id,
+    title: doc.title,
+    excerpt: doc.content.substring(0, 100) + '...',
+    content_type: doc.content_type
+  })) || [];
+};
+
+// Document tags function
+export const getDocumentTags = async (documentId: string) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  // First verify document ownership
+  const { data: document } = await supabase
+    .from('documents')
+    .select('id')
+    .eq('id', documentId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (!document) throw new Error('Document not found or access denied');
+
+  const { data, error } = await supabase
+    .from('document_tags')
+    .select('*')
+    .eq('document_id', documentId);
+
+  if (error) {
+    console.error('Error fetching document tags:', error);
+    throw error;
+  }
+
+  return data || [];
 };
 
 // Grand Strategist API call
