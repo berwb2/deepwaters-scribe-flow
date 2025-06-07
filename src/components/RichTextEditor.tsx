@@ -10,6 +10,7 @@ import Table from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
 import TableHeader from './editor/TableHeader';
+import TextAlign from '@tiptap/extension-text-align';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/atom-one-dark.css';
 
@@ -48,12 +49,32 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         placeholder,
       }),
       Underline,
+      TextAlign.configure({
+        types: ['heading', 'paragraph'],
+      }),
       Table.configure({
         resizable: true,
+        handleWidth: 5,
+        cellMinWidth: 25,
+        HTMLAttributes: {
+          class: 'table-auto w-full border-collapse border border-gray-300',
+        },
       }),
-      TableRow,
-      TableHeader,
-      TableCell,
+      TableRow.configure({
+        HTMLAttributes: {
+          class: 'border border-gray-300',
+        },
+      }),
+      TableHeader.configure({
+        HTMLAttributes: {
+          class: 'border border-gray-300 bg-gray-50 p-2 font-semibold text-left',
+        },
+      }),
+      TableCell.configure({
+        HTMLAttributes: {
+          class: 'border border-gray-300 p-2 break-words',
+        },
+      }),
     ],
     content,
     onUpdate: ({ editor }) => {
@@ -62,6 +83,14 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     editorProps: {
       attributes: {
         class: 'prose prose-blue max-w-none focus:outline-none',
+      },
+      transformPastedHTML(html) {
+        // Preserve formatting when pasting
+        return html;
+      },
+      transformPastedText(text) {
+        // Handle plain text paste with proper line breaks
+        return text.replace(/\n/g, '<br>');
       },
     },
   });
@@ -91,6 +120,24 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         />
       </div>
       <EditorStylesheet />
+      <style jsx global>{`
+        .ProseMirror table {
+          table-layout: fixed !important;
+          width: 100% !important;
+          word-wrap: break-word !important;
+        }
+        .ProseMirror table td,
+        .ProseMirror table th {
+          word-wrap: break-word !important;
+          overflow-wrap: break-word !important;
+          hyphens: auto !important;
+          white-space: normal !important;
+        }
+        .ProseMirror p {
+          word-wrap: break-word !important;
+          overflow-wrap: break-word !important;
+        }
+      `}</style>
     </div>
   );
 };

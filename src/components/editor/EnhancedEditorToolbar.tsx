@@ -21,11 +21,11 @@ import {
   Minus
 } from 'lucide-react';
 
-interface EditorToolbarProps {
+interface EnhancedEditorToolbarProps {
   editor: Editor;
 }
 
-const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
+const EnhancedEditorToolbar: React.FC<EnhancedEditorToolbarProps> = ({ editor }) => {
   if (!editor) {
     return null;
   }
@@ -279,4 +279,4 @@ const EditorToolbar: React.FC<EditorToolbarProps> = ({ editor }) => {
   );
 };
 
-export default EditorToolbar;
+export default EnhancedEditorToolbar;
