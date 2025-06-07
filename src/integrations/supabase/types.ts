@@ -74,6 +74,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
+          parent_id: string | null
           priority: string | null
           user_id: string
         }
@@ -84,6 +85,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
+          parent_id?: string | null
           priority?: string | null
           user_id: string
         }
@@ -94,10 +96,19 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
+          parent_id?: string | null
           priority?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "document_folders_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "document_folders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       document_tags: {
         Row: {

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Navbar from '@/components/Navbar';
@@ -162,7 +161,7 @@ const Folders = () => {
               {viewMode === 'grid' ? (
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {folders.map((folder) => (
-                    <FolderCard key={folder.id} folder={folder} onRefresh={refetch} />
+                    <FolderCard key={folder.id} folder={folder} />
                   ))}
                 </div>
               ) : (
