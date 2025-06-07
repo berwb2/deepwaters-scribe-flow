@@ -848,3 +848,184 @@ export async function listFolderDocuments(folderId: string | null) {
     };
   }
 }
+
+// Book management API functions
+export async function createBook(bookData: { title: string; description?: string | null }) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) throw new Error("Not authenticated");
+
+    const { data, error } = await supabase
+      .from('books')
+      .insert({
+        ...bookData,
+        user_id: user.id
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    toast.success("Book created successfully");
+    return data;
+  } catch (error: any) {
+    toast.error("Failed to create book", { description: error.message });
+    throw error;
+  }
+}
+
+export async function listBooks() {
+  try {
+    const { data, error, count } = await supabase
+      .from('books')
+      .select(`
+        *,
+        chapters!chapters_book_id_fkey(id)
+      `, { count: 'exact' })
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Calculate chapter count and word count for each book
+    const booksWithStats = data.map(book => ({
+      ...book,
+      chapter_count: book.chapters?.length || 0,
+      total_word_count: 0 // This would need to be calculated from chapter content
+    }));
+
+    return {
+      books: booksWithStats,
+      total: count || 0
+    };
+  } catch (error: any) {
+    toast.error("Failed to fetch books", { description: error.message });
+    throw error;
+  }
+}
+
+export async function getBook(bookId: string) {
+  try {
+    const { data, error } = await supabase
+      .from('books')
+      .select(`
+        *,
+        chapters!chapters_book_id_fkey(*)
+      `)
+      .eq('id', bookId)
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error: any) {
+    toast.error("Failed to fetch book", { description: error.message });
+    throw error;
+  }
+}
+
+export async function updateBook(bookId: string, updates: any) {
+  try {
+    const { data, error } = await supabase
+      .from('books')
+      .update(updates)
+      .eq('id', bookId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    toast.success("Book updated successfully");
+    return data;
+  } catch (error: any) {
+    toast.error("Failed to update book", { description: error.message });
+    throw error;
+  }
+}
+
+export async function deleteBook(bookId: string) {
+  try {
+    const { error } = await supabase
+      .from('books')
+      .delete()
+      .eq('id', bookId);
+
+    if (error) throw error;
+    toast.success("Book deleted successfully");
+    return true;
+  } catch (error: any) {
+    toast.error("Failed to delete book", { description: error.message });
+    throw error;
+  }
+}
+
+// Chapter management API functions
+export async function createChapter(chapterData: {
+  book_id: string;
+  title: string;
+  content?: string;
+  chapter_number: number;
+}) {
+  try {
+    const { data, error } = await supabase
+      .from('chapters')
+      .insert(chapterData)
+      .select()
+      .single();
+
+    if (error) throw error;
+    toast.success("Chapter created successfully");
+    return data;
+  } catch (error: any) {
+    toast.error("Failed to create chapter", { description: error.message });
+    throw error;
+  }
+}
+
+export async function updateChapter(chapterId: string, updates: any) {
+  try {
+    const { data, error } = await supabase
+      .from('chapters')
+      .update(updates)
+      .eq('id', chapterId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    toast.success("Chapter updated successfully");
+    return data;
+  } catch (error: any) {
+    toast.error("Failed to update chapter", { description: error.message });
+    throw error;
+  }
+}
+
+export async function deleteChapter(chapterId: string) {
+  try {
+    const { error } = await supabase
+      .from('chapters')
+      .delete()
+      .eq('id', chapterId);
+
+    if (error) throw error;
+    toast.success("Chapter deleted successfully");
+    return true;
+  } catch (error: any) {
+    toast.error("Failed to delete chapter", { description: error.message });
+    throw error;
+  }
+}
+
+export async function reorderChapters(bookId: string, chapterUpdates: { id: string; chapter_number: number }[]) {
+  try {
+    const promises = chapterUpdates.map(update =>
+      supabase
+        .from('chapters')
+        .update({ chapter_number: update.chapter_number })
+        .eq('id', update.id)
+    );
+
+    await Promise.all(promises);
+    toast.success("Chapters reordered successfully");
+    return true;
+  } catch (error: any) {
+    toast.error("Failed to reorder chapters", { description: error.message });
+    throw error;
+  }
+}

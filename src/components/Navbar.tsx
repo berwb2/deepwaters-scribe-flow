@@ -1,124 +1,147 @@
+
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Moon, Sun, Menu, X, Calendar } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { useTheme } from '@/components/theme-provider';
-import Logo from '@/components/Logo';
-import GlobalSearch from '@/components/GlobalSearch';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { 
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { User, Settings, LogOut, Home, FileText, Calendar as CalendarIcon, Folder, Book, Brain } from 'lucide-react';
+import Logo from './Logo';
+import GlobalSearch from './GlobalSearch';
 
 const Navbar = () => {
-  const { theme, setTheme } = useTheme();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const handleThemeToggle = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark');
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
   };
-  
-  // For demo purposes
-  // In a real app, this would come from authentication state
-  const user = {
-    name: 'User',
-    initials: 'U'
+
+  const getInitials = (email: string) => {
+    return email.charAt(0).toUpperCase();
   };
-  
+
   return (
-    <header className="border-b sticky top-0 z-50 bg-background/80 backdrop-blur-sm">
-      <div className="container mx-auto px-4 flex h-16 items-center justify-between">
-        <div className="flex items-center">
-          {isMobile && (
-            <Button variant="ghost" size="icon" className="mr-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
-          )}
-          <Link to="/" className="flex items-center">
-            <Logo size="small" />
-          </Link>
-        </div>
-        
-        {!isMobile && (
-          <nav className="mx-6 flex items-center space-x-4 lg:space-x-6 flex-1 justify-center">
-            <Button asChild variant="ghost">
-              <Link to="/dashboard">Dashboard</Link>
-            </Button>
-            <Button asChild variant="ghost">
-              <Link to="/documents">Documents</Link>
-            </Button>
-            <Button asChild variant="ghost">
-              <Link to="/folders">Folders</Link>
-            </Button>
-            <Button asChild variant="ghost">
-              <Link to="/calendar">Calendar</Link>
-            </Button>
-          </nav>
-        )}
-        
-        <div className="flex items-center space-x-4">
-          {!isMobile && <GlobalSearch />}
+    <nav className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
+      <div className="container mx-auto px-4">
+        <div className="flex h-16 items-center justify-between">
+          <div className="flex items-center space-x-8">
+            <Link to="/" className="flex items-center space-x-2">
+              <Logo className="h-8 w-8" />
+              <span className="font-serif text-xl font-medium text-blue-600">DeepWaters</span>
+            </Link>
+            
+            {user && (
+              <div className="hidden md:flex items-center space-x-6">
+                <Link 
+                  to="/dashboard" 
+                  className="flex items-center space-x-2 text-sm font-medium hover:text-blue-600 transition-colors"
+                >
+                  <Home className="h-4 w-4" />
+                  <span>Dashboard</span>
+                </Link>
+                <Link 
+                  to="/documents" 
+                  className="flex items-center space-x-2 text-sm font-medium hover:text-blue-600 transition-colors"
+                >
+                  <FileText className="h-4 w-4" />
+                  <span>Documents</span>
+                </Link>
+                <Link 
+                  to="/folders" 
+                  className="flex items-center space-x-2 text-sm font-medium hover:text-blue-600 transition-colors"
+                >
+                  <Folder className="h-4 w-4" />
+                  <span>Folders</span>
+                </Link>
+                <Link 
+                  to="/books" 
+                  className="flex items-center space-x-2 text-sm font-medium hover:text-blue-600 transition-colors"
+                >
+                  <Book className="h-4 w-4" />
+                  <span>Books</span>
+                </Link>
+                <Link 
+                  to="/grand-strategist" 
+                  className="flex items-center space-x-2 text-sm font-medium hover:text-blue-600 transition-colors"
+                >
+                  <Brain className="h-4 w-4" />
+                  <span>Grand Strategist</span>
+                </Link>
+                <Link 
+                  to="/calendar" 
+                  className="flex items-center space-x-2 text-sm font-medium hover:text-blue-600 transition-colors"
+                >
+                  <CalendarIcon className="h-4 w-4" />
+                  <span>Calendar</span>
+                </Link>
+              </div>
+            )}
+          </div>
           
-          <Button variant="ghost" size="icon" onClick={handleThemeToggle}>
-            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>{user.initials}</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem className="font-medium">{user.name}</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/account')}>
-                Account Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/documents')}>
-                My Documents
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/login')}>
-                Logout
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-      
-      {/* Mobile Navigation Menu */}
-      {isMobile && mobileMenuOpen && (
-        <div className="border-t px-4 py-3 bg-background">
-          <div className="space-y-1">
-            <Link to="/dashboard" className="block py-2 px-3 rounded-md hover:bg-accent">
-              Dashboard
-            </Link>
-            <Link to="/documents" className="block py-2 px-3 rounded-md hover:bg-accent">
-              Documents
-            </Link>
-            <Link to="/folders" className="block py-2 px-3 rounded-md hover:bg-accent">
-              Folders
-            </Link>
-            <Link to="/calendar" className="block py-2 px-3 rounded-md hover:bg-accent">
-              Calendar
-            </Link>
-            <div className="pt-2">
-              <GlobalSearch />
-            </div>
+          <div className="flex items-center space-x-4">
+            {user && <GlobalSearch />}
+            
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.user_metadata?.avatar_url} alt="Avatar" />
+                      <AvatarFallback className="bg-blue-500 text-white">
+                        {getInitials(user.email || 'U')}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <div className="flex items-center justify-start gap-2 p-2">
+                    <div className="flex flex-col space-y-1 leading-none">
+                      <p className="font-medium">{user.user_metadata?.display_name || 'User'}</p>
+                      <p className="w-[200px] truncate text-sm text-muted-foreground">
+                        {user.email}
+                      </p>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/account" className="cursor-pointer">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Button variant="ghost" asChild>
+                  <Link to="/login">Sign In</Link>
+                </Button>
+                <Button asChild className="bg-blue-500 hover:bg-blue-600">
+                  <Link to="/login">Get Started</Link>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
-      )}
-    </header>
+      </div>
+    </nav>
   );
 };
 

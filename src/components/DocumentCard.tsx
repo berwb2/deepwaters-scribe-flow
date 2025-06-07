@@ -14,13 +14,29 @@ export { type DocumentMeta };
 const getContentTypeColor = (type: DocType) => {
   switch (type) {
     case 'plan':
-      return 'bg-water text-white';
+      return 'bg-blue-400 text-white';
     case 'doctrine':
       return 'bg-blue-500 text-white';
-    case 'reflection':
-      return 'bg-indigo-500 text-white';
+    case 'strategy':
+      return 'bg-blue-600 text-white';
+    case 'report':
+      return 'bg-blue-300 text-white';
+    case 'memo':
+      return 'bg-blue-200 text-blue-800';
+    case 'note':
+      return 'bg-blue-100 text-blue-700';
+    case 'analysis':
+      return 'bg-blue-700 text-white';
+    case 'proposal':
+      return 'bg-blue-800 text-white';
+    case 'framework':
+      return 'bg-blue-900 text-white';
+    case 'guide':
+      return 'bg-blue-400 text-white';
+    case 'manifesto':
+      return 'bg-blue-600 text-white';
     default:
-      return 'bg-gray-500 text-white';
+      return 'bg-blue-500 text-white';
   }
 };
 
@@ -44,7 +60,7 @@ const DocumentCard = ({ document, contextMenuItems }: DocumentCardProps) => {
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg font-serif">
-            <Link to={`/documents/${document.id}`} className="hover:text-primary transition-colors">
+            <Link to={`/documents/${document.id}`} className="hover:text-blue-600 transition-colors">
               {document.title}
             </Link>
           </CardTitle>

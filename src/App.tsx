@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -17,11 +16,11 @@ import ViewDocument from './pages/ViewDocument';
 import AccountSettings from './pages/AccountSettings';
 import Dashboard from './pages/Dashboard';
 import NotFound from './pages/NotFound';
-// Add new routes for folder management
 import Folders from './pages/Folders';
 import FolderView from './pages/FolderView';
-// Add new Calendar route
 import Calendar from './pages/Calendar';
+import Books from './pages/Books';
+import GrandStrategist from './pages/GrandStrategist';
 
 // Component that plays the welcome sound
 function AppWithSound() {
@@ -43,14 +42,11 @@ function AppWithSound() {
         <Route path="/documents/:id" element={<ViewDocument />} />
         <Route path="/account" element={<AccountSettings />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        
-        {/* Add new folder routes */}
         <Route path="/folders" element={<Folders />} />
         <Route path="/folders/:id" element={<FolderView />} />
-        
-        {/* Add new calendar route */}
         <Route path="/calendar" element={<Calendar />} />
-        
+        <Route path="/books" element={<Books />} />
+        <Route path="/grand-strategist" element={<GrandStrategist />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </TooltipProvider>

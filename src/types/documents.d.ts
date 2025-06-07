@@ -27,12 +27,12 @@ export interface FolderMeta {
   color: string | null;
   category: string | null;
   priority: string | null;
-  parent_id: string | null; // Added for nested folder support
+  parent_id: string | null;
   created_at: string;
   user_id: string;
   document_count?: number;
-  children?: FolderMeta[]; // Added for nested structure
-  depth?: number; // Added for display purposes
+  children?: FolderMeta[];
+  depth?: number;
 }
 
 // Define folder category type
@@ -42,4 +42,28 @@ export type FolderCategory = 'personal' | 'work' | 'school' | 'project' | 'other
 export interface FolderTreeNode extends FolderMeta {
   children: FolderTreeNode[];
   isExpanded?: boolean;
+}
+
+// Book management types
+export interface BookMeta {
+  id: string;
+  title: string;
+  description: string | null;
+  cover_image_url: string | null;
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  chapter_count?: number;
+  total_word_count?: number;
+}
+
+export interface ChapterMeta {
+  id: string;
+  book_id: string;
+  title: string;
+  content: string;
+  chapter_number: number;
+  created_at: string;
+  updated_at: string;
+  word_count?: number;
 }

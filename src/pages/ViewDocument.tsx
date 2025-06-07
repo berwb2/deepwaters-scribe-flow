@@ -1,10 +1,11 @@
+
 import React, { useRef, useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import TableOfContents from '@/components/TableOfContents';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DocType } from '@/types/documents';
+import { DocumentMeta } from '@/types/documents';
 import { ArrowLeft, Download, File, Info, Trash } from 'lucide-react';
 import { getDocument, deleteDocument, getDocumentTags } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
@@ -87,7 +88,7 @@ const ViewDocument = () => {
         <Navbar />
         <main className="flex-1 container mx-auto px-4 py-12 flex justify-center items-center">
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-t-water rounded-full animate-spin mx-auto mb-4"></div>
+            <div className="w-16 h-16 border-4 border-t-blue-400 rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-muted-foreground">Loading document...</p>
           </div>
         </main>
@@ -112,6 +113,12 @@ const ViewDocument = () => {
       </div>
     );
   }
+
+  // Type assertion to ensure document matches DocumentMeta interface
+  const typedDocument: DocumentMeta = {
+    ...document,
+    content_type: document.content_type as any // This will be properly typed
+  };
   
   // Calculate word count
   const wordCount = document.content.split(/\s+/).filter(Boolean).length;
@@ -137,7 +144,7 @@ const ViewDocument = () => {
               </Link>
             </Button>
             
-            <Badge className="mr-2">
+            <Badge className="mr-2 bg-blue-500 text-white">
               {document.content_type.charAt(0).toUpperCase() + document.content_type.slice(1)}
             </Badge>
             
@@ -153,10 +160,10 @@ const ViewDocument = () => {
             {/* Document content */}
             <div className="flex-1">
               <div className="mb-6 pb-6 border-b">
-                <h1 className="text-3xl md:text-4xl font-serif font-medium mb-4">{document.title}</h1>
+                <h1 className="text-3xl md:text-4xl font-serif font-medium mb-4 text-blue-600">{document.title}</h1>
                 <div className="flex flex-wrap gap-2">
                   {tags.map(tag => (
-                    <Badge key={tag.id} variant="outline">
+                    <Badge key={tag.id} variant="outline" className="border-blue-200 text-blue-600">
                       {tag.tag_name}
                     </Badge>
                   ))}
@@ -165,7 +172,7 @@ const ViewDocument = () => {
               
               <div ref={contentRef}>
                 <DocumentRenderer 
-                  document={document}
+                  document={typedDocument}
                   onSectionClick={scrollToSection}
                 />
               </div>
@@ -175,11 +182,11 @@ const ViewDocument = () => {
                   <span>{wordCount} words</span>
                 </div>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={handleDownload}>
+                  <Button variant="outline" size="sm" onClick={handleDownload} className="border-blue-200 text-blue-600 hover:bg-blue-50">
                     <Download className="mr-2 h-4 w-4" />
                     Download
                   </Button>
-                  <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600" onClick={handleDeleteDocument}>
+                  <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600 border-red-200 hover:bg-red-50" onClick={handleDeleteDocument}>
                     <Trash className="mr-2 h-4 w-4" />
                     Delete
                   </Button>
