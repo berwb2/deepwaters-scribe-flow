@@ -2,7 +2,7 @@
 import { Json } from "@/integrations/supabase/types";
 
 // Define the document type for the application
-export type DocType = 'plan' | 'doctrine' | 'reflection' | string;
+export type DocType = 'plan' | 'doctrine' | 'strategy' | 'report' | 'memo' | 'note' | 'analysis' | 'proposal' | 'framework' | 'guide' | 'manifesto' | 'markdown';
 
 export interface DocumentMeta {
   id: string;
@@ -27,10 +27,19 @@ export interface FolderMeta {
   color: string | null;
   category: string | null;
   priority: string | null;
+  parent_id: string | null; // Added for nested folder support
   created_at: string;
   user_id: string;
   document_count?: number;
+  children?: FolderMeta[]; // Added for nested structure
+  depth?: number; // Added for display purposes
 }
 
 // Define folder category type
 export type FolderCategory = 'personal' | 'work' | 'school' | 'project' | 'other' | string;
+
+// Tree structure for nested folders
+export interface FolderTreeNode extends FolderMeta {
+  children: FolderTreeNode[];
+  isExpanded?: boolean;
+}

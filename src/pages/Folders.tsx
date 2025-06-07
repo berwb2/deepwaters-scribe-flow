@@ -3,21 +3,24 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import Navbar from '@/components/Navbar';
-import FolderCard from '@/components/FolderCard';
+import FolderTree from '@/components/FolderTree';
 import CreateFolderDialog from '@/components/CreateFolderDialog';
-import { Plus, Search, FolderPlus } from 'lucide-react';
+import { Plus, Search, FolderPlus, Grid, List } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useQuery } from '@tanstack/react-query';
 import { listFolders, getCurrentUser } from '@/lib/api';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { FolderMeta } from '@/types/documents';
+import { Toggle } from '@/components/ui/toggle';
+import { FolderMeta, FolderTreeNode } from '@/types/documents';
 
 const Folders = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedPriority, setSelectedPriority] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'tree' | 'grid'>('tree');
+  const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   
   // Get current user
   const { data: user } = useQuery({
@@ -32,14 +35,76 @@ const Folders = () => {
       category: selectedCategory || undefined,
       priority: selectedPriority || undefined
     }),
-    enabled: !!user, // Only fetch if user is authenticated
+    enabled: !!user,
   });
-  
+
+  // Build folder tree structure
+  const buildFolderTree = (folders: FolderMeta[]): FolderTreeNode[] => {
+    const folderMap = new Map<string, FolderTreeNode>();
+    const rootFolders: FolderTreeNode[] = [];
+
+    // Create nodes for all folders
+    folders.forEach(folder => {
+      folderMap.set(folder.id, {
+        ...folder,
+        children: [],
+        isExpanded: expandedFolders.has(folder.id)
+      });
+    });
+
+    // Build the tree structure
+    folders.forEach(folder => {
+      const node = folderMap.get(folder.id)!;
+      if (folder.parent_id && folderMap.has(folder.parent_id)) {
+        const parent = folderMap.get(folder.parent_id)!;
+        parent.children.push(node);
+      } else {
+        rootFolders.push(node);
+      }
+    });
+
+    return rootFolders;
+  };
+
+  const folderTree = foldersData?.folders ? buildFolderTree(foldersData.folders) : [];
+
   // Filter folders by search term
-  const filteredFolders = foldersData?.folders?.filter(folder => 
-    folder.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (folder.description && folder.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  ) || [];
+  const filterFolderTree = (folders: FolderTreeNode[], searchTerm: string): FolderTreeNode[] => {
+    if (!searchTerm) return folders;
+
+    return folders.filter(folder => {
+      const matchesSearch = folder.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (folder.description && folder.description.toLowerCase().includes(searchTerm.toLowerCase()));
+      
+      const hasMatchingChildren = folder.children.some(child => 
+        filterFolderTree([child], searchTerm).length > 0
+      );
+
+      return matchesSearch || hasMatchingChildren;
+    }).map(folder => ({
+      ...folder,
+      children: filterFolderTree(folder.children, searchTerm)
+    }));
+  };
+
+  const filteredFolderTree = filterFolderTree(folderTree, searchTerm);
+
+  const handleFolderExpand = (folderId: string) => {
+    setExpandedFolders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(folderId)) {
+        newSet.delete(folderId);
+      } else {
+        newSet.add(folderId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleFolderDelete = async (folderId: string) => {
+    // This would call the delete API
+    await refetch();
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -48,16 +113,37 @@ const Folders = () => {
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
-            <h1 className="text-3xl font-serif font-medium mb-2">My Folders</h1>
+            <h1 className="text-3xl font-serif font-medium mb-2 text-blue-700">My Folders</h1>
             <p className="text-muted-foreground">Organize your documents into folders</p>
           </div>
           
-          <Button 
-            className="mt-4 md:mt-0" 
-            onClick={() => setIsCreateDialogOpen(true)}
-          >
-            <FolderPlus className="mr-2 h-4 w-4" /> Create New Folder
-          </Button>
+          <div className="flex items-center gap-2 mt-4 md:mt-0">
+            <div className="flex items-center border rounded-md">
+              <Toggle
+                pressed={viewMode === 'tree'}
+                onPressedChange={(pressed) => setViewMode(pressed ? 'tree' : 'grid')}
+                aria-label="Tree view"
+                size="sm"
+              >
+                <List className="h-4 w-4" />
+              </Toggle>
+              <Toggle
+                pressed={viewMode === 'grid'}
+                onPressedChange={(pressed) => setViewMode(pressed ? 'grid' : 'tree')}
+                aria-label="Grid view"
+                size="sm"
+              >
+                <Grid className="h-4 w-4" />
+              </Toggle>
+            </div>
+            
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700" 
+              onClick={() => setIsCreateDialogOpen(true)}
+            >
+              <FolderPlus className="mr-2 h-4 w-4" /> Create New Folder
+            </Button>
+          </div>
         </div>
         
         {!user ? (
@@ -78,7 +164,7 @@ const Folders = () => {
                     placeholder="Search folders..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 border-blue-200 focus:border-blue-400"
                   />
                 </div>
                 
@@ -89,7 +175,7 @@ const Folders = () => {
                       value={selectedCategory || "none"} 
                       onValueChange={(value) => setSelectedCategory(value === "none" ? null : value)}
                     >
-                      <SelectTrigger id="category-filter" className="w-36">
+                      <SelectTrigger id="category-filter" className="w-36 border-blue-200">
                         <SelectValue placeholder="All Categories" />
                       </SelectTrigger>
                       <SelectContent>
@@ -109,7 +195,7 @@ const Folders = () => {
                       value={selectedPriority || "none"} 
                       onValueChange={(value) => setSelectedPriority(value === "none" ? null : value)}
                     >
-                      <SelectTrigger id="priority-filter" className="w-36">
+                      <SelectTrigger id="priority-filter" className="w-36 border-blue-200">
                         <SelectValue placeholder="All Priorities" />
                       </SelectTrigger>
                       <SelectContent>
@@ -126,14 +212,19 @@ const Folders = () => {
             
             {isLoading ? (
               <div className="text-center py-16">
-                <div className="w-16 h-16 border-4 border-t-water rounded-full animate-spin mx-auto mb-4"></div>
+                <div className="w-16 h-16 border-4 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
                 <p className="text-muted-foreground">Loading folders...</p>
               </div>
-            ) : filteredFolders.length > 0 ? (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredFolders.map((folder) => (
-                  <FolderCard key={folder.id} folder={folder as FolderMeta} />
-                ))}
+            ) : filteredFolderTree.length > 0 ? (
+              <div className="bg-white rounded-lg border border-blue-100 shadow-sm">
+                <div className="p-6">
+                  <FolderTree
+                    folders={filteredFolderTree}
+                    onFolderExpand={handleFolderExpand}
+                    onFolderDelete={handleFolderDelete}
+                    onRefresh={refetch}
+                  />
+                </div>
               </div>
             ) : (
               <div className="text-center py-16">
@@ -143,7 +234,10 @@ const Folders = () => {
                     ? "Try adjusting your filters" 
                     : "Create your first folder to organize your documents"}
                 </p>
-                <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Button 
+                  onClick={() => setIsCreateDialogOpen(true)}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
                   <FolderPlus className="mr-2 h-4 w-4" /> Create New Folder
                 </Button>
               </div>
