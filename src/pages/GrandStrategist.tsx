@@ -25,9 +25,15 @@ const GrandStrategist = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [analysisMode, setAnalysisMode] = useState<'chat' | 'analysis' | 'planning'>('chat');
 
+  // Fetch ALL documents for context (increase limit significantly)
   const { data: documentsData } = useQuery({
-    queryKey: ['documents-for-strategist'],
-    queryFn: () => listDocuments({}, { field: 'updated_at', direction: 'desc' }, 1, 50),
+    queryKey: ['all-documents-for-strategist'],
+    queryFn: async () => {
+      // Get ALL documents with high limit to ensure comprehensive context
+      const response = await listDocuments({}, { field: 'updated_at', direction: 'desc' }, 1, 1000);
+      console.log(`Grand Strategist has access to ${response.documents.length} documents`);
+      return response;
+    },
   });
 
   const documents = documentsData?.documents || [];
@@ -42,10 +48,12 @@ const GrandStrategist = () => {
 
   const callGrandStrategist = async (userMessage: string, documentContext: any[] = []) => {
     try {
+      console.log(`Sending ${documentContext.length} documents to Grand Strategist`);
+      
       const { data, error } = await supabase.functions.invoke('grand-strategist', {
         body: {
           message: userMessage,
-          documents: documentContext,
+          documents: documentContext, // Send ALL documents
           analysis_mode: analysisMode
         }
       });
@@ -73,6 +81,7 @@ const GrandStrategist = () => {
     setIsLoading(true);
 
     try {
+      // Send ALL documents as context
       const response = await callGrandStrategist(currentMessage, documents);
       
       const assistantMessage: StrategistMessage = {
@@ -85,6 +94,7 @@ const GrandStrategist = () => {
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       toast.error('Failed to get response from Grand Strategist');
+      console.error('Grand Strategist error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -94,8 +104,8 @@ const GrandStrategist = () => {
     setIsLoading(true);
     try {
       const response = await callGrandStrategist(
-        `I need strategic consultation from ${general.name}, who specializes in ${general.specialization}. Please provide expert advice in this domain based on my current context and documents.`,
-        documents
+        `I need strategic consultation from ${general.name}, who specializes in ${general.specialization}. Please provide expert advice in this domain based on my current context and ALL documents in the system.`,
+        documents // Send ALL documents
       );
       
       const generalMessage: StrategistMessage = {
@@ -108,6 +118,30 @@ const GrandStrategist = () => {
       setMessages(prev => [...prev, generalMessage]);
     } catch (error) {
       toast.error(`Failed to consult ${general.name}`);
+      console.error(`General consultation error:`, error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const performComprehensiveAnalysis = async () => {
+    setIsLoading(true);
+    try {
+      const analysisMessage = `Conduct a comprehensive strategic analysis of ALL my documents (${documents.length} total documents). Identify key patterns, opportunities, cross-document connections, and actionable recommendations. Provide a complete strategic overview of my document ecosystem.`;
+      
+      const response = await callGrandStrategist(analysisMessage, documents);
+      
+      const analysisResponse: StrategistMessage = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: `**🎯 COMPREHENSIVE STRATEGIC ANALYSIS (${documents.length} Documents)**\n\n${response}`,
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, analysisResponse]);
+    } catch (error) {
+      toast.error('Failed to perform comprehensive analysis');
+      console.error('Comprehensive analysis error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -173,14 +207,10 @@ const GrandStrategist = () => {
                     disabled={isLoading || documents.length === 0}
                     className="w-full bg-blue-500 hover:bg-blue-600 text-white text-xs"
                     size="sm"
-                    onClick={() => {
-                      const analysisMessage = "Conduct a comprehensive strategic analysis of all my documents. Identify key patterns, opportunities, and actionable recommendations.";
-                      setCurrentMessage(analysisMessage);
-                      handleSendMessage();
-                    }}
+                    onClick={performComprehensiveAnalysis}
                   >
                     <Target className="mr-2 h-3 w-3" />
-                    Complete Analysis
+                    Complete Analysis ({documents.length} docs)
                   </Button>
                   
                   <Button 
@@ -188,7 +218,7 @@ const GrandStrategist = () => {
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs"
                     size="sm"
                     onClick={() => {
-                      const planningMessage = "Help me create a comprehensive strategic life and work plan based on my current context and goals.";
+                      const planningMessage = "Help me create a comprehensive strategic life and work plan based on ALL my documents and current context.";
                       setCurrentMessage(planningMessage);
                       handleSendMessage();
                     }}
@@ -202,7 +232,7 @@ const GrandStrategist = () => {
                     className="w-full bg-blue-700 hover:bg-blue-800 text-white text-xs"
                     size="sm"
                     onClick={() => {
-                      const opportunityMessage = "Analyze my documents and current situation to identify hidden opportunities and high-impact actions I should prioritize.";
+                      const opportunityMessage = "Analyze ALL my documents and current situation to identify hidden opportunities and high-impact actions I should prioritize.";
                       setCurrentMessage(opportunityMessage);
                       handleSendMessage();
                     }}
@@ -225,16 +255,21 @@ const GrandStrategist = () => {
                       <span className="text-sm font-medium text-blue-700">{documents.length} documents</span>
                     </div>
                     <div className="text-xs text-blue-600">
-                      Full access to your document ecosystem for contextual strategic analysis
+                      Full access to your complete document ecosystem for comprehensive strategic analysis
                     </div>
                     {documents.length > 0 && (
                       <div className="mt-2">
                         <div className="text-xs font-medium text-blue-600 mb-1">Recent Intel:</div>
-                        {documents.slice(0, 3).map((doc) => (
+                        {documents.slice(0, 5).map((doc) => (
                           <div key={doc.id} className="text-xs text-blue-500 truncate">
                             • {doc.title}
                           </div>
                         ))}
+                        {documents.length > 5 && (
+                          <div className="text-xs text-blue-400">
+                            ... and {documents.length - 5} more documents
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -249,6 +284,9 @@ const GrandStrategist = () => {
                   <CardTitle className="text-blue-700 flex items-center gap-2">
                     <Brain className="h-5 w-5" />
                     Strategic Command Interface
+                    <Badge variant="outline" className="ml-auto">
+                      {documents.length} Documents Available
+                    </Badge>
                   </CardTitle>
                 </CardHeader>
                 
@@ -259,18 +297,18 @@ const GrandStrategist = () => {
                       <Brain className="h-16 w-16 text-blue-400 mx-auto mb-4" />
                       <h3 className="text-lg font-medium text-blue-600 mb-2">Supreme Commander Ready</h3>
                       <p className="text-blue-700 text-sm max-w-md mx-auto mb-4">
-                        I am Claude the Magnificent, your Supreme AI Commander. Ready to provide strategic guidance, 
-                        coordinate AI generals, and analyze your complete intelligence ecosystem.
+                        I am Claude the Magnificent, your Supreme AI Commander. Ready to provide strategic guidance with 
+                        full access to your complete document ecosystem ({documents.length} documents).
                       </p>
                       <div className="grid grid-cols-1 gap-2 max-w-sm mx-auto text-xs">
                         <Badge variant="outline" className="border-blue-200 text-blue-600">
-                          • Strategic document intelligence
+                          • Complete document intelligence ({documents.length} docs)
                         </Badge>
                         <Badge variant="outline" className="border-blue-200 text-blue-600">
                           • AI generals coordination
                         </Badge>
                         <Badge variant="outline" className="border-blue-200 text-blue-600">
-                          • Comprehensive life planning
+                          • Comprehensive strategic analysis
                         </Badge>
                       </div>
                     </div>
@@ -305,7 +343,7 @@ const GrandStrategist = () => {
                           <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
                           <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                           <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                          <span className="text-sm text-blue-700 ml-2">Supreme Commander analyzing...</span>
+                          <span className="text-sm text-blue-700 ml-2">Supreme Commander analyzing {documents.length} documents...</span>
                         </div>
                       </div>
                     </div>
@@ -336,7 +374,7 @@ const GrandStrategist = () => {
                     </Button>
                   </div>
                   <div className="mt-2 text-xs text-blue-600">
-                    Enter to send • Shift+Enter for new line • {documents.length} documents in intelligence network
+                    Enter to send • Shift+Enter for new line • {documents.length} documents in strategic intelligence network
                   </div>
                 </div>
               </Card>

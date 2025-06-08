@@ -460,7 +460,7 @@ export const listDocuments = async (
   filters: { contentType?: string } = {},
   sortBy: { field: string; direction: 'asc' | 'desc' } = { field: 'created_at', direction: 'desc' },
   page: number = 1,
-  pageSize: number = 20
+  pageSize: number = 50 // Increased default page size for better context
 ) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
@@ -499,6 +499,26 @@ export const listDocuments = async (
     currentPage: page,
     pageSize
   };
+};
+
+export const getAllDocumentsForAI = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  // Get ALL documents without pagination for AI context
+  const { data, error } = await supabase
+    .from('documents')
+    .select('id, title, content, content_type, created_at, updated_at, metadata')
+    .eq('user_id', user.id)
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching all documents for AI:', error);
+    throw error;
+  }
+
+  console.log(`Retrieved ${data?.length || 0} documents for AI analysis`);
+  return data || [];
 };
 
 export const getDocument = async (documentId: string) => {
