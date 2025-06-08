@@ -21,6 +21,7 @@ import Folders from './pages/Folders';
 import FolderView from './pages/FolderView';
 import Calendar from './pages/Calendar';
 import Books from './pages/Books';
+import BookWriter from './pages/BookWriter';
 import GrandStrategist from './pages/GrandStrategist';
 
 // Component that plays the welcome sound
@@ -48,6 +49,7 @@ function AppWithSound() {
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/books" element={<Books />} />
         <Route path="/books/:id" element={<ViewDocument />} />
+        <Route path="/book-writer" element={<BookWriter />} />
         <Route path="/grand-strategist" element={<GrandStrategist />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
