@@ -1,341 +1,182 @@
+
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
 import Navbar from '@/components/Navbar';
+import DocumentsSidebar from '@/components/DocumentsSidebar';
 import DocumentCard from '@/components/DocumentCard';
-import { Plus, Search, FolderPlus, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { listDocuments, getCurrentUser, listFolders, addDocumentToFolder } from '@/lib/api';
-import { DocumentMeta } from '@/types/documents';
-import { toast } from '@/components/ui/sonner';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination';
-
-// Add a new interface for the move to folder dialog
-interface MoveToFolderDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  documentId: string;
-}
-
-const MoveToFolderDialog: React.FC<MoveToFolderDialogProps> = ({ isOpen, onClose, documentId }) => {
-  const [folderId, setFolderId] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const queryClient = useQueryClient();
-  
-  // Fetch available folders
-  const { data: foldersData } = useQuery({
-    queryKey: ['folders'],
-    queryFn: () => listFolders(),
-    enabled: isOpen,
-  });
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!folderId) {
-      toast.error("Please select a folder");
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
-    try {
-      await addDocumentToFolder(folderId, documentId);
-      toast.success("Document added to folder");
-      queryClient.invalidateQueries({ queryKey: ['documents'] });
-      queryClient.invalidateQueries({ queryKey: ['folders'] });
-      onClose();
-      setFolderId('');
-    } catch (error) {
-      console.error("Error adding document to folder:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-  
-  return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Move to Folder</DialogTitle>
-        </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="folder">Select Folder</Label>
-            <Select value={folderId} onValueChange={setFolderId}>
-              <SelectTrigger id="folder">
-                <SelectValue placeholder="Select a folder" />
-              </SelectTrigger>
-              <SelectContent>
-                {foldersData?.folders?.length > 0 ? (
-                  foldersData.folders.map((folder) => (
-                    <SelectItem key={folder.id} value={folder.id}>
-                      {folder.name}
-                    </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="no-folders" disabled>
-                    No available folders
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <DialogFooter className="mt-6">
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" disabled={isSubmitting || !folderId}>
-              {isSubmitting ? 'Moving...' : 'Move to Folder'}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-};
+  Plus, 
+  Search, 
+  Filter, 
+  File,
+  Calendar,
+  Tag,
+  MoreVertical
+} from 'lucide-react';
+import { listDocuments } from '@/lib/api';
+import { DocumentMeta } from '@/types/documents';
 
 const Documents = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
-  const [selectedDocumentId, setSelectedDocumentId] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 12; // Increased from default 20 to show more documents per page
-  
-  // Get current user
-  const { data: user } = useQuery({
-    queryKey: ['currentUser'],
-    queryFn: getCurrentUser,
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedType, setSelectedType] = useState<string>('all');
+
+  // Fetch documents
+  const { data: documentsResponse, isLoading, error } = useQuery({
+    queryKey: ['documents'],
+    queryFn: async () => {
+      return await listDocuments(
+        {},
+        { field: 'updated_at', direction: 'desc' },
+        1,
+        50
+      );
+    },
   });
-  
-  // Fetch documents with pagination
-  const { data, isLoading } = useQuery({
-    queryKey: ['documents', selectedType, currentPage],
-    queryFn: () => listDocuments(
-      selectedType ? { contentType: selectedType } : {},
-      { field: 'updated_at', direction: 'desc' },
-      currentPage,
-      pageSize
-    ),
-    enabled: !!user, // Only fetch if user is authenticated
+
+  const documents = documentsResponse?.documents || [];
+
+  // Filter documents based on search and type
+  const filteredDocuments = documents.filter(doc => {
+    const matchesSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         doc.content?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = selectedType === 'all' || doc.content_type === selectedType;
+    return matchesSearch && matchesType;
   });
-  
-  // Filter documents by search term
-  const filteredDocuments = data?.documents?.filter(doc => 
-    doc.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    doc.content.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
 
-  // Handle "Move to Folder" click
-  const handleMoveToFolder = (documentId: string) => {
-    setSelectedDocumentId(documentId);
-    setMoveDialogOpen(true);
-  };
+  // Get unique document types for filter
+  const documentTypes = ['all', ...new Set(documents.map(doc => doc.content_type).filter(Boolean))];
 
-  // Handle page changes
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  if (isLoading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <div className="flex flex-1">
+          <DocumentsSidebar />
+          <main className="flex-1 p-8 flex justify-center items-center">
+            <div className="text-center">
+              <div className="w-16 h-16 border-4 border-t-blue-400 rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-blue-600">Loading documents...</p>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
-  // Reset page when filters change
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedType, searchTerm]);
-
-  const totalPages = data?.totalPages || 0;
-  const currentResults = filteredDocuments.length;
-  const totalResults = data?.total || 0;
+  if (error) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <div className="flex flex-1">
+          <DocumentsSidebar />
+          <main className="flex-1 p-8 flex justify-center items-center">
+            <div className="text-center">
+              <File className="h-16 w-16 text-blue-400 mx-auto mb-4" />
+              <p className="text-blue-600">Error loading documents</p>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
       <Navbar />
       
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-serif font-medium mb-2">My Documents</h1>
-            <p className="text-muted-foreground">
-              Browse and manage your plans, doctrines, and reflections
-              {totalResults > 0 && (
-                <span className="ml-2 text-sm">
-                  ({currentResults} of {totalResults} documents)
-                </span>
-              )}
-            </p>
-          </div>
-          
-          <Button className="mt-4 md:mt-0" asChild>
-            <Link to="/create">
-              <Plus className="mr-2 h-4 w-4" /> Create New Document
-            </Link>
-          </Button>
-        </div>
+      <div className="flex flex-1">
+        <DocumentsSidebar />
         
-        {!user ? (
-          <div className="text-center py-16">
-            <div className="text-xl font-medium mb-2">Sign in to view your documents</div>
-            <p className="text-muted-foreground mb-6">You need to be signed in to access your documents</p>
-            <Button asChild>
-              <Link to="/login">Sign In</Link>
+        <main className="flex-1 p-8">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div>
+              <h1 className="text-3xl font-serif font-medium mb-2 text-blue-600">Documents</h1>
+              <p className="text-blue-700">Manage and organize your documents</p>
+            </div>
+            
+            <Button asChild className="mt-4 md:mt-0 bg-blue-500 hover:bg-blue-600 text-white">
+              <Link to="/create">
+                <Plus className="mr-2 h-4 w-4" /> Create New Document
+              </Link>
             </Button>
           </div>
-        ) : (
-          <>
-            <div className="mb-8">
-              <div className="flex flex-col sm:flex-row gap-4 items-center">
-                <div className="relative w-full sm:max-w-sm">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+
+          {/* Search and Filters */}
+          <Card className="mb-6 border-blue-200 bg-white">
+            <CardContent className="p-4">
+              <div className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-400" />
                   <Input
                     placeholder="Search documents..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10 border-blue-200 focus:border-blue-400"
                   />
                 </div>
                 
-                <div className="flex flex-wrap gap-2">
-                  <Badge 
-                    variant={selectedType === null ? "default" : "outline"} 
-                    className="cursor-pointer hover:bg-primary/90"
-                    onClick={() => setSelectedType(null)}
-                  >
-                    All
-                  </Badge>
-                  <Badge 
-                    variant={selectedType === 'plan' ? "default" : "outline"} 
-                    className="cursor-pointer hover:bg-primary/90"
-                    onClick={() => setSelectedType('plan')}
-                  >
-                    Plans
-                  </Badge>
-                  <Badge 
-                    variant={selectedType === 'doctrine' ? "default" : "outline"} 
-                    className="cursor-pointer hover:bg-primary/90"
-                    onClick={() => setSelectedType('doctrine')}
-                  >
-                    Doctrines
-                  </Badge>
-                  <Badge 
-                    variant={selectedType === 'reflection' ? "default" : "outline"} 
-                    className="cursor-pointer hover:bg-primary/90"
-                    onClick={() => setSelectedType('reflection')}
-                  >
-                    Reflections
-                  </Badge>
-                </div>
-              </div>
-            </div>
-            
-            {isLoading ? (
-              <div className="text-center py-16">
-                <div className="w-16 h-16 border-4 border-t-water rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading documents...</p>
-              </div>
-            ) : filteredDocuments.length > 0 ? (
-              <>
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-                  {filteredDocuments.map((doc) => (
-                    <DocumentCard 
-                      key={doc.id} 
-                      document={doc as DocumentMeta}
-                      contextMenuItems={[
-                        {
-                          label: 'Move to Folder',
-                          onClick: async () => handleMoveToFolder(doc.id)
-                        }
-                      ]}
-                    />
+                <div className="flex gap-2 flex-wrap">
+                  {documentTypes.map((type) => (
+                    <Badge
+                      key={type}
+                      variant={selectedType === type ? "default" : "outline"}
+                      className={`cursor-pointer ${
+                        selectedType === type 
+                          ? 'bg-blue-500 text-white' 
+                          : 'border-blue-200 text-blue-600 hover:bg-blue-50'
+                      }`}
+                      onClick={() => setSelectedType(type)}
+                    >
+                      {type === 'all' ? 'All Types' : type}
+                    </Badge>
                   ))}
                 </div>
-                
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex justify-center">
-                    <Pagination>
-                      <PaginationContent>
-                        <PaginationItem>
-                          <PaginationPrevious 
-                            onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                          />
-                        </PaginationItem>
-                        
-                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                          let pageNum;
-                          if (totalPages <= 5) {
-                            pageNum = i + 1;
-                          } else if (currentPage <= 3) {
-                            pageNum = i + 1;
-                          } else if (currentPage >= totalPages - 2) {
-                            pageNum = totalPages - 4 + i;
-                          } else {
-                            pageNum = currentPage - 2 + i;
-                          }
-                          
-                          return (
-                            <PaginationItem key={pageNum}>
-                              <PaginationLink
-                                onClick={() => handlePageChange(pageNum)}
-                                isActive={currentPage === pageNum}
-                                className="cursor-pointer"
-                              >
-                                {pageNum}
-                              </PaginationLink>
-                            </PaginationItem>
-                          );
-                        })}
-                        
-                        <PaginationItem>
-                          <PaginationNext 
-                            onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                          />
-                        </PaginationItem>
-                      </PaginationContent>
-                    </Pagination>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="text-center py-16">
-                <div className="text-xl font-medium mb-2">No documents found</div>
-                <p className="text-muted-foreground mb-6">Try adjusting your search or create a new document</p>
-                <Button asChild>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Documents Grid */}
+          {filteredDocuments.length === 0 ? (
+            <Card className="border-blue-200 bg-white">
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <File className="h-16 w-16 text-blue-400 mb-4" />
+                <h2 className="text-xl font-medium mb-2 text-blue-600">
+                  {searchQuery || selectedType !== 'all' ? 'No documents found' : 'No documents yet'}
+                </h2>
+                <p className="text-blue-700 text-center mb-6 max-w-md">
+                  {searchQuery || selectedType !== 'all' 
+                    ? 'Try adjusting your search or filters to find what you\'re looking for.'
+                    : 'Create your first document to get started with organizing your thoughts and plans.'
+                  }
+                </p>
+                <Button asChild className="bg-blue-500 hover:bg-blue-600 text-white">
                   <Link to="/create">
-                    <Plus className="mr-2 h-4 w-4" /> Create New Document
+                    <Plus className="mr-2 h-4 w-4" /> Create Your First Document
                   </Link>
                 </Button>
-              </div>
-            )}
-          </>
-        )}
-      </main>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredDocuments.map((doc) => (
+                <DocumentCard key={doc.id} document={doc as DocumentMeta} />
+              ))}
+            </div>
+          )}
+        </main>
+      </div>
       
-      <footer className="py-6 border-t">
-        <div className="container mx-auto px-4 text-center text-muted-foreground">
+      <footer className="py-6 border-t border-blue-200 bg-blue-50">
+        <div className="container mx-auto px-4 text-center text-blue-600">
           © {new Date().getFullYear()} DeepWaters. All rights reserved.
         </div>
       </footer>
-      
-      <MoveToFolderDialog
-        isOpen={moveDialogOpen}
-        onClose={() => setMoveDialogOpen(false)}
-        documentId={selectedDocumentId}
-      />
     </div>
   );
 };
