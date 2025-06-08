@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, Settings, LogOut, Home, FileText, Calendar as CalendarIcon, Folder, Book, Brain } from 'lucide-react';
+import { User, Settings, LogOut } from 'lucide-react';
 import Logo from './Logo';
 import GlobalSearch from './GlobalSearch';
 import { getCurrentUser, signOut } from '@/lib/api';
@@ -48,77 +48,6 @@ const Navbar = () => {
               <Logo className="h-8 w-8" />
               <span className="font-serif text-xl font-medium text-blue-600">DeepWaters</span>
             </Link>
-            
-            {user && (
-              <div className="hidden md:flex items-center space-x-6">
-                <Link 
-                  to="/dashboard" 
-                  className={`flex items-center space-x-2 text-sm font-medium transition-colors ${
-                    location.pathname === '/dashboard' 
-                      ? 'text-blue-600' 
-                      : 'hover:text-blue-600'
-                  }`}
-                >
-                  <Home className="h-4 w-4" />
-                  <span>Dashboard</span>
-                </Link>
-                <Link 
-                  to="/documents" 
-                  className={`flex items-center space-x-2 text-sm font-medium transition-colors ${
-                    location.pathname === '/documents' 
-                      ? 'text-blue-600' 
-                      : 'hover:text-blue-600'
-                  }`}
-                >
-                  <FileText className="h-4 w-4" />
-                  <span>Documents</span>
-                </Link>
-                <Link 
-                  to="/folders" 
-                  className={`flex items-center space-x-2 text-sm font-medium transition-colors ${
-                    location.pathname === '/folders' 
-                      ? 'text-blue-600' 
-                      : 'hover:text-blue-600'
-                  }`}
-                >
-                  <Folder className="h-4 w-4" />
-                  <span>Folders</span>
-                </Link>
-                <Link 
-                  to="/books" 
-                  className={`flex items-center space-x-2 text-sm font-medium transition-colors ${
-                    location.pathname === '/books' 
-                      ? 'text-blue-600' 
-                      : 'hover:text-blue-600'
-                  }`}
-                >
-                  <Book className="h-4 w-4" />
-                  <span>Books</span>
-                </Link>
-                <Link 
-                  to="/grand-strategist" 
-                  className={`flex items-center space-x-2 text-sm font-medium transition-colors ${
-                    location.pathname === '/grand-strategist' 
-                      ? 'text-blue-600' 
-                      : 'hover:text-blue-600'
-                  }`}
-                >
-                  <Brain className="h-4 w-4" />
-                  <span>Grand Strategist</span>
-                </Link>
-                <Link 
-                  to="/calendar" 
-                  className={`flex items-center space-x-2 text-sm font-medium transition-colors ${
-                    location.pathname === '/calendar' 
-                      ? 'text-blue-600' 
-                      : 'hover:text-blue-600'
-                  }`}
-                >
-                  <CalendarIcon className="h-4 w-4" />
-                  <span>Calendar</span>
-                </Link>
-              </div>
-            )}
           </div>
           
           <div className="flex items-center space-x-4">

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
-import DocumentsSidebar from '@/components/DocumentsSidebar';
+import Sidebar from '@/components/Sidebar';
 import DocumentCard from '@/components/DocumentCard';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,7 +56,7 @@ const Documents = () => {
       <div className="flex flex-col min-h-screen">
         <Navbar />
         <div className="flex flex-1">
-          <DocumentsSidebar />
+          <Sidebar />
           <main className="flex-1 p-8 flex justify-center items-center">
             <div className="text-center">
               <div className="w-16 h-16 border-4 border-t-blue-400 rounded-full animate-spin mx-auto mb-4"></div>
@@ -73,7 +73,7 @@ const Documents = () => {
       <div className="flex flex-col min-h-screen">
         <Navbar />
         <div className="flex flex-1">
-          <DocumentsSidebar />
+          <Sidebar />
           <main className="flex-1 p-8 flex justify-center items-center">
             <div className="text-center">
               <File className="h-16 w-16 text-blue-400 mx-auto mb-4" />
@@ -90,7 +90,7 @@ const Documents = () => {
       <Navbar />
       
       <div className="flex flex-1">
-        <DocumentsSidebar />
+        <Sidebar />
         
         <main className="flex-1 p-8">
           {/* Header */}
