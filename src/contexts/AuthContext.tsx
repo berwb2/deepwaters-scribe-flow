@@ -2,17 +2,12 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { getCurrentUser } from '@/lib/api';
 import { useQuery } from '@tanstack/react-query';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 
-// Define the User type with user_metadata
-export interface User {
-  id: string;
-  email: string;
+// Use Supabase's User type directly to avoid conflicts
+export interface User extends SupabaseUser {
+  // We can add additional properties here if needed
   name?: string;
-  user_metadata?: {
-    name?: string;
-    avatar_url?: string;
-    display_name?: string;
-  };
 }
 
 interface AuthContextProps {
