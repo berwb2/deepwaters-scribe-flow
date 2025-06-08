@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Book, Calendar, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import CreateBookDialog from '@/components/CreateBookDialog';
-import { supabase } from '@/integrations/supabase/client';
+import { listDocuments } from '@/lib/api';
 
 interface BookMeta {
   id: string;
@@ -27,43 +27,37 @@ const Books = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  // Fetch books from Supabase
-  const { data: booksData, isLoading } = useQuery({
+  // Fetch book documents (documents with content_type 'book')
+  const { data: booksResponse, isLoading } = useQuery({
     queryKey: ['books'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
-
-      const { data, error } = await supabase
-        .from('books')
-        .select(`
-          id,
-          title,
-          description,
-          cover_image_url,
-          created_at,
-          updated_at,
-          user_id,
-          chapters (
-            id,
-            content
-          )
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      return data?.map(book => ({
-        ...book,
-        chapter_count: book.chapters?.length || 0,
-        total_word_count: book.chapters?.reduce((total, chapter) => 
-          total + (chapter.content?.split(' ').length || 0), 0) || 0
-      })) || [];
+      return await listDocuments(
+        { contentType: 'book' },
+        { field: 'created_at', direction: 'desc' },
+        1,
+        50
+      );
     },
   });
 
-  const books = booksData || [];
+  // Transform documents into book format
+  const books: BookMeta[] = booksResponse?.documents?.map(doc => {
+    const metadata = doc.metadata as any || {};
+    const chapterIds = metadata.chapters || [];
+    const wordCount = doc.content?.split(' ').length || 0;
+    
+    return {
+      id: doc.id,
+      title: doc.title,
+      description: metadata.description || null,
+      cover_image_url: metadata.cover_image_url || null,
+      created_at: doc.created_at,
+      updated_at: doc.updated_at,
+      user_id: doc.user_id,
+      chapter_count: chapterIds.length,
+      total_word_count: wordCount
+    };
+  }) || [];
 
   const handleBookCreated = () => {
     queryClient.invalidateQueries({ queryKey: ['books'] });

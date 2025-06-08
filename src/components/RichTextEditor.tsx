@@ -57,22 +57,22 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         handleWidth: 5,
         cellMinWidth: 25,
         HTMLAttributes: {
-          class: 'table-auto w-full border-collapse border border-gray-300',
+          class: 'table-auto w-full border-collapse border border-blue-300',
         },
       }),
       TableRow.configure({
         HTMLAttributes: {
-          class: 'border border-gray-300',
+          class: 'border border-blue-300',
         },
       }),
       TableHeader.configure({
         HTMLAttributes: {
-          class: 'border border-gray-300 bg-gray-50 p-2 font-semibold text-left',
+          class: 'border border-blue-300 bg-blue-50 p-2 font-semibold text-left',
         },
       }),
       TableCell.configure({
         HTMLAttributes: {
-          class: 'border border-gray-300 p-2 break-words',
+          class: 'border border-blue-300 p-2 break-words',
         },
       }),
     ],
@@ -85,17 +85,14 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         class: 'prose prose-blue max-w-none focus:outline-none',
       },
       transformPastedHTML(html) {
-        // Preserve formatting when pasting
         return html;
       },
       transformPastedText(text) {
-        // Handle plain text paste with proper line breaks
         return text.replace(/\n/g, '<br>');
       },
     },
   });
 
-  // Highlight code blocks after render
   useEffect(() => {
     if (editor) {
       const codeBlocks = document.querySelectorAll('pre code');
@@ -110,7 +107,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   }
 
   return (
-    <div className="border rounded-lg shadow-sm bg-background relative">
+    <div className="border rounded-lg shadow-sm bg-background relative border-blue-200">
       <EditorToolbar editor={editor} />
       {editor && <EditorBubbleMenu editor={editor} />}
       <div className="p-6">
@@ -120,7 +117,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         />
       </div>
       <EditorStylesheet />
-      <style jsx global>{`
+      <style>{`
         .ProseMirror table {
           table-layout: fixed !important;
           width: 100% !important;
