@@ -42,13 +42,14 @@ const getContentTypeColor = (type: DocType) => {
 
 interface DocumentCardProps {
   document: DocumentMeta;
+  onUpdate?: () => void;
   contextMenuItems?: Array<{
     label: string;
     onClick: () => Promise<void> | void;
   }>;
 }
 
-const DocumentCard = ({ document, contextMenuItems }: DocumentCardProps) => {
+const DocumentCard = ({ document, onUpdate, contextMenuItems }: DocumentCardProps) => {
   const formattedDate = format(new Date(document.updated_at), 'MMM dd, yyyy');
   const timeAgo = formatDistance(new Date(document.updated_at), new Date(), { addSuffix: true });
   
