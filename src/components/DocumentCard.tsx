@@ -50,11 +50,16 @@ interface DocumentCardProps {
 }
 
 const DocumentCard = ({ document, onUpdate, contextMenuItems }: DocumentCardProps) => {
-  const formattedDate = format(new Date(document.updated_at), 'MMM dd, yyyy');
-  const timeAgo = formatDistance(new Date(document.updated_at), new Date(), { addSuffix: true });
+  // Handle both string and Date types for updated_at
+  const updatedAtDate = typeof document.updated_at === 'string' 
+    ? new Date(document.updated_at) 
+    : document.updated_at;
+
+  const formattedDate = format(updatedAtDate, 'MMM dd, yyyy');
+  const timeAgo = formatDistance(updatedAtDate, new Date(), { addSuffix: true });
   
   // Get first 100 characters of content for preview
-  const contentPreview = document.content.substring(0, 100) + (document.content.length > 100 ? '...' : '');
+  const contentPreview = document.content?.substring(0, 100) + (document.content && document.content.length > 100 ? '...' : '') || 'No content';
   
   return (
     <Card className="h-full flex flex-col hover:shadow-md transition-shadow">
@@ -62,7 +67,7 @@ const DocumentCard = ({ document, onUpdate, contextMenuItems }: DocumentCardProp
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg font-serif">
             <Link to={`/documents/${document.id}`} className="hover:text-blue-600 transition-colors">
-              {document.title}
+              {document.title || 'Untitled Document'}
             </Link>
           </CardTitle>
           <div className="flex items-center gap-2">

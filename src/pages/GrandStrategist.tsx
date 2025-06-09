@@ -45,10 +45,12 @@ const GrandStrategist = () => {
   const { data: documentsData } = useQuery({
     queryKey: ['all-documents-for-strategist'],
     queryFn: async () => {
-      const response = await listDocuments({}, { field: 'updated_at', direction: 'desc' }, 1, 1000);
-      console.log(`Grand Strategist has access to ${response.documents.length} documents`);
+      // Fetch ALL documents without pagination limit
+      const response = await listDocuments({}, { field: 'updated_at', direction: 'desc' }, 1, 10000);
+      console.log(`Grand Strategist has access to ${response.documents.length} documents out of ${response.total} total`);
       return response;
     },
+    enabled: !!user,
   });
 
   const documents = documentsData?.documents || [];
@@ -322,7 +324,7 @@ const GrandStrategist = () => {
                   <Brain className="h-4 w-4 text-white" />
                 </div>
                 <div>
-                  <h1 className="font-medium">ChatGPT</h1>
+                  <h1 className="font-medium">Grand Strategist</h1>
                   <p className="text-sm text-gray-600">{documents.length} documents available</p>
                 </div>
               </div>
@@ -336,6 +338,7 @@ const GrandStrategist = () => {
                 {activeConversation.messages.length === 0 && (
                   <div className="text-center py-12">
                     <h2 className="text-2xl font-medium mb-2">What can I help with?</h2>
+                    <p className="text-gray-600">I have access to all {documents.length} of your documents</p>
                   </div>
                 )}
 
@@ -378,7 +381,7 @@ const GrandStrategist = () => {
                 <div className="max-w-3xl mx-auto">
                   <div className="relative bg-gray-50 rounded-3xl border border-gray-200">
                     <Textarea
-                      placeholder="Message ChatGPT..."
+                      placeholder="Message Grand Strategist..."
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
@@ -401,6 +404,7 @@ const GrandStrategist = () => {
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <h2 className="text-2xl font-medium mb-2">What can I help with?</h2>
+                <p className="text-gray-600 mb-4">I have access to all {documents.length} of your documents</p>
                 <Button onClick={startNewConversation} className="mt-4">
                   Start a conversation
                 </Button>

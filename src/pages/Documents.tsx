@@ -6,9 +6,9 @@ import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
 import DocumentCard from '@/components/DocumentCard';
 import CreateDocumentDialog from '@/components/CreateDocumentDialog';
-import GlobalSearch from '@/components/GlobalSearch';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Plus } from 'lucide-react';
 import { listDocuments, getCurrentUser } from '@/lib/api';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -18,6 +18,8 @@ const Documents = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(100); // Increased from default to show more documents
   const isMobile = useIsMobile();
 
   const { data: user } = useQuery({
@@ -26,7 +28,7 @@ const Documents = () => {
   });
 
   const { data: documentsData, isLoading, refetch } = useQuery({
-    queryKey: ['documents', searchQuery, selectedType],
+    queryKey: ['documents', searchQuery, selectedType, currentPage],
     queryFn: async () => {
       const filters: any = {};
       
@@ -38,13 +40,14 @@ const Documents = () => {
         filters.content_type = selectedType;
       }
 
-      const response = await listDocuments(filters, { field: 'updated_at', direction: 'desc' }, 1, 50);
+      const response = await listDocuments(filters, { field: 'updated_at', direction: 'desc' }, currentPage, pageSize);
       return response;
     },
     enabled: !!user,
   });
 
   const documents = documentsData?.documents || [];
+  const totalDocuments = documentsData?.total || 0;
   const documentTypes = ['all', 'markdown', 'report', 'conversation', 'note', 'plan'];
 
   const formatDate = (dateString: string) => {
@@ -68,6 +71,10 @@ const Documents = () => {
     });
   };
 
+  const loadMoreDocuments = () => {
+    setPageSize(prevSize => prevSize + 50);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -83,9 +90,14 @@ const Documents = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">Documents</h1>
-                  <p className="text-gray-600">Manage and organize your documents</p>
+                  <p className="text-gray-600">
+                    Manage and organize your documents ({totalDocuments} total)
+                  </p>
                 </div>
-                <Button onClick={() => setIsCreateDialogOpen(true)} className={isMobile ? 'fixed bottom-6 right-6 rounded-full h-14 w-14 shadow-lg z-10' : ''}>
+                <Button 
+                  onClick={() => setIsCreateDialogOpen(true)} 
+                  className={isMobile ? 'fixed bottom-6 right-6 rounded-full h-14 w-14 shadow-lg z-10' : ''}
+                >
                   <Plus className="h-4 w-4" />
                   {!isMobile && <span className="ml-2">Create New Document</span>}
                 </Button>
@@ -94,12 +106,12 @@ const Documents = () => {
               {/* Search and Filters */}
               <div className="flex flex-col gap-3">
                 <div className="relative">
-                  <input
+                  <Input
                     type="text"
                     placeholder="Search documents..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full"
                   />
                 </div>
                 
@@ -145,6 +157,18 @@ const Documents = () => {
                 ))
               )}
             </div>
+
+            {/* Load More Button */}
+            {documents.length > 0 && documents.length < totalDocuments && (
+              <div className="text-center mt-8">
+                <Button 
+                  onClick={loadMoreDocuments}
+                  variant="outline"
+                >
+                  Load More Documents ({documents.length} of {totalDocuments})
+                </Button>
+              </div>
+            )}
           </div>
         </main>
       </div>
