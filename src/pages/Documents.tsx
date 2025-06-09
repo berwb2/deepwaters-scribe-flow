@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus } from 'lucide-react';
 import { listDocuments, getCurrentUser } from '@/lib/api';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { DocType } from '@/types/documents';
 
 const Documents = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -92,11 +93,15 @@ const Documents = () => {
 
               {/* Search and Filters */}
               <div className="flex flex-col gap-3">
-                <GlobalSearch 
-                  searchQuery={searchQuery}
-                  onSearchChange={setSearchQuery}
-                  placeholder="Search documents..."
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search documents..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
                 
                 <div className="flex gap-2 overflow-x-auto pb-2">
                   {documentTypes.map(type => (
@@ -132,6 +137,7 @@ const Documents = () => {
                     key={doc.id}
                     document={{
                       ...doc,
+                      content_type: doc.content_type as DocType,
                       updated_at: formatDate(doc.updated_at)
                     }}
                     onUpdate={refetch}
@@ -144,8 +150,8 @@ const Documents = () => {
       </div>
 
       <CreateDocumentDialog
-        open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
+        isOpen={isCreateDialogOpen}
+        onClose={() => setIsCreateDialogOpen(false)}
         onDocumentCreated={refetch}
       />
     </div>
