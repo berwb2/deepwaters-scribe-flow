@@ -1,15 +1,16 @@
 
-import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState, useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
+import MobileNav from '@/components/MobileNav';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Brain, Send, Plus, MessageSquare } from 'lucide-react';
+import { Brain, Send, Plus, Menu } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { listDocuments, getCurrentUser } from '@/lib/api';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface StrategistMessage {
   id: string;
@@ -32,7 +33,9 @@ const GrandStrategist = () => {
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -53,6 +56,14 @@ const GrandStrategist = () => {
   useEffect(() => {
     loadConversations();
   }, [user]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [activeConversation?.messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const loadConversations = async () => {
     if (!user) return;
@@ -111,6 +122,7 @@ const GrandStrategist = () => {
       newConv.id = data.id;
       setConversations([newConv, ...conversations]);
       setActiveConversation(newConv);
+      if (isMobile) setSidebarOpen(false);
     } catch (error) {
       console.error('Error creating conversation:', error);
       toast.error('Failed to create new conversation');
@@ -220,185 +232,183 @@ const GrandStrategist = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
+    <div className="flex flex-col min-h-screen bg-white">
       <Navbar />
+      <MobileNav />
       
       <div className="flex flex-1">
-        <Sidebar />
+        {!isMobile && <Sidebar />}
         
-        <main className="flex-1 flex">
-          {/* Conversation Sidebar */}
-          <div className={`${sidebarOpen ? 'w-80' : 'w-0'} transition-all duration-300 overflow-hidden border-r border-blue-200 bg-white`}>
-            <div className="h-full flex flex-col">
-              <div className="p-4 border-b border-blue-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-medium text-blue-700">Conversations</h3>
-                  <Button 
-                    size="sm" 
-                    onClick={startNewConversation}
-                    className="bg-blue-500 hover:bg-blue-600 text-white"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Chat
+        {/* Conversation Sidebar */}
+        {isMobile && sidebarOpen && (
+          <div className="fixed inset-0 z-40 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)}>
+            <div className="w-80 h-full bg-white" onClick={e => e.stopPropagation()}>
+              <div className="p-4 border-b">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-gray-900">Conversations</h3>
+                  <Button size="sm" onClick={() => { startNewConversation(); setSidebarOpen(false); }}>
+                    <Plus className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
               
-              <div className="flex-1 overflow-y-auto p-4 space-y-2">
+              <div className="p-4 space-y-3 overflow-y-auto h-full">
                 {conversations.map(conv => (
                   <div 
                     key={conv.id} 
                     className={`p-3 rounded-lg cursor-pointer transition-colors ${
                       activeConversation?.id === conv.id 
-                        ? 'bg-blue-100 border border-blue-300' 
-                        : 'bg-blue-50 hover:bg-blue-100'
+                        ? 'bg-gray-100' 
+                        : 'hover:bg-gray-50'
                     }`}
-                    onClick={() => setActiveConversation(conv)}
+                    onClick={() => { setActiveConversation(conv); setSidebarOpen(false); }}
                   >
-                    <h4 className="font-medium text-blue-700 text-sm truncate">{conv.title}</h4>
-                    <p className="text-blue-600 text-xs mt-1 line-clamp-2">{conv.lastMessage}</p>
-                    <span className="text-blue-500 text-xs">{conv.timestamp}</span>
+                    <h4 className="font-medium text-sm truncate">{conv.title}</h4>
+                    <p className="text-gray-600 text-xs mt-1 line-clamp-2">{conv.lastMessage}</p>
                   </div>
                 ))}
-                
-                {conversations.length === 0 && (
-                  <div className="text-center text-blue-600 py-8">
-                    <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No conversations yet</p>
-                    <p className="text-xs opacity-75">Start a new chat to begin</p>
-                  </div>
-                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!isMobile && (
+          <div className="w-80 border-r bg-white">
+            <div className="p-4 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium text-gray-900">Conversations</h3>
+                <Button size="sm" onClick={startNewConversation}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="p-4 space-y-3 overflow-y-auto">
+              {conversations.map(conv => (
+                <div 
+                  key={conv.id} 
+                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                    activeConversation?.id === conv.id 
+                      ? 'bg-gray-100' 
+                      : 'hover:bg-gray-50'
+                  }`}
+                  onClick={() => setActiveConversation(conv)}
+                >
+                  <h4 className="font-medium text-sm truncate">{conv.title}</h4>
+                  <p className="text-gray-600 text-xs mt-1 line-clamp-2">{conv.lastMessage}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
+          {/* Header */}
+          <div className="p-4 border-b bg-white">
+            <div className="flex items-center justify-between">
+              {isMobile && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSidebarOpen(true)}
+                  className="mr-2"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              )}
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <Brain className="h-4 w-4 text-white" />
+                </div>
+                <div>
+                  <h1 className="font-medium">ChatGPT</h1>
+                  <p className="text-sm text-gray-600">{documents.length} documents available</p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Main Chat Area */}
-          <div className="flex-1 flex flex-col">
-            {/* Header */}
-            <div className="p-6 border-b border-blue-200 bg-white">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSidebarOpen(!sidebarOpen)}
-                    className="border-blue-200 text-blue-600 hover:bg-blue-50"
-                  >
-                    {sidebarOpen ? '←' : '→'}
-                  </Button>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                      <Brain className="h-6 w-6 text-white" />
+          {activeConversation ? (
+            <>
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                {activeConversation.messages.length === 0 && (
+                  <div className="text-center py-12">
+                    <h2 className="text-2xl font-medium mb-2">What can I help with?</h2>
+                  </div>
+                )}
+
+                {activeConversation.messages.map((msg) => (
+                  <div key={msg.id} className="flex gap-4">
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      {msg.role === 'user' ? (
+                        <span className="text-sm font-medium">You</span>
+                      ) : (
+                        <Brain className="h-4 w-4" />
+                      )}
                     </div>
-                    <div>
-                      <h1 className="text-xl font-serif font-medium text-blue-600">Grand Strategist Claude</h1>
-                      <p className="text-blue-700 text-sm">Ready to serve • {documents.length} documents available</p>
+                    <div className="flex-1">
+                      <div className="whitespace-pre-wrap text-gray-900 leading-relaxed">
+                        {msg.content}
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
+
+                {isLoading && (
+                  <div className="flex gap-4">
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                      <Brain className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
               </div>
-            </div>
 
-            {activeConversation ? (
-              <>
-                {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                  {activeConversation.messages.length === 0 && (
-                    <div className="text-center py-12">
-                      <Brain className="h-16 w-16 text-blue-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-blue-600 mb-2">Grand Strategist Ready</h3>
-                      <p className="text-blue-700 text-sm max-w-md mx-auto">
-                        I am Claude the Magnificent, your Supreme AI Commander. Ready to provide strategic guidance with 
-                        full access to your complete document ecosystem ({documents.length} documents).
-                      </p>
-                    </div>
-                  )}
-
-                  {activeConversation.messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[85%] rounded-lg px-4 py-3 ${
-                          msg.role === 'user'
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-white border border-blue-200 text-blue-900'
-                        }`}
-                      >
-                        <div className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</div>
-                        <div className={`text-xs mt-2 ${
-                          msg.role === 'user' ? 'text-blue-100' : 'text-blue-600'
-                        }`}>
-                          {msg.timestamp.toLocaleTimeString()}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  {isLoading && (
-                    <div className="flex justify-start">
-                      <div className="bg-white border border-blue-200 rounded-lg px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                          <span className="text-sm text-blue-700 ml-2">Grand Strategist analyzing...</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Input */}
-                <div className="border-t border-blue-200 p-6 bg-white">
-                  <div className="flex gap-3">
+              {/* Input */}
+              <div className="p-4 border-t bg-white">
+                <div className="max-w-3xl mx-auto">
+                  <div className="relative bg-gray-50 rounded-3xl border border-gray-200">
                     <Textarea
-                      placeholder="Share your thoughts with the Grand Strategist..."
+                      placeholder="Message ChatGPT..."
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      className="flex-1 min-h-[60px] border-blue-200 focus:border-blue-400 bg-white resize-none"
+                      className="border-0 bg-transparent resize-none focus:ring-0 rounded-3xl px-4 py-3 pr-12"
+                      rows={1}
                     />
                     <Button
                       onClick={sendMessage}
                       disabled={isLoading || !message.trim()}
-                      className="bg-blue-500 hover:bg-blue-600 text-white h-[60px]"
+                      size="sm"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full w-8 h-8 p-0"
                     >
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>
-                  <div className="mt-2 text-xs text-blue-600">
-                    Enter to send • Shift+Enter for new line • {documents.length} documents in intelligence network
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <Brain className="h-24 w-24 text-blue-400 mx-auto mb-6" />
-                  <h2 className="text-2xl font-serif font-medium text-blue-600 mb-2">Welcome back</h2>
-                  <p className="text-blue-700 mb-6 max-w-md">
-                    Start a new conversation with your Grand Strategist or continue an existing one.
-                  </p>
-                  <Button 
-                    onClick={startNewConversation}
-                    className="bg-blue-500 hover:bg-blue-600 text-white"
-                  >
-                    Begin Strategic Consultation
-                  </Button>
                 </div>
               </div>
-            )}
-          </div>
-        </main>
-      </div>
-      
-      <footer className="py-6 border-t border-blue-200 bg-blue-50">
-        <div className="container mx-auto px-4 text-center text-blue-600">
-          © {new Date().getFullYear()} DeepWaters. All rights reserved.
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <h2 className="text-2xl font-medium mb-2">What can I help with?</h2>
+                <Button onClick={startNewConversation} className="mt-4">
+                  Start a conversation
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
-      </footer>
+      </div>
     </div>
   );
 };
