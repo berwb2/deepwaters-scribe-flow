@@ -1,208 +1,209 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Brain, Target, Users, TrendingUp, Settings, Lightbulb, Zap } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Send, Brain, X, Loader2 } from "lucide-react";
 import { DocumentMeta } from '@/types/documents';
+import { callGrandStrategist, getAllDocumentsForAI } from '@/lib/api';
+import { toast } from '@/components/ui/sonner';
+import AIResponseFormatter from './AIResponseFormatter';
 
-interface AIInsights {
-  keyPoints: string[];
-  actionItems: string[];
-  strategicRecommendations: string[];
-  connections: string[];
+interface Message {
+  id: string;
+  type: 'user' | 'ai';
+  content: string;
+  timestamp: Date;
 }
 
 interface AIAssistantSidebarProps {
   document?: DocumentMeta;
   className?: string;
+  onClose?: () => void;
 }
 
-const AIAssistantSidebar: React.FC<AIAssistantSidebarProps> = ({ document, className = "" }) => {
-  const [aiInsights, setAiInsights] = useState<AIInsights | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-
-  const aiGenerals = [
-    { icon: Target, name: "General Flos", specialization: "Intelligence", color: "bg-red-500" },
-    { icon: Users, name: "General Sophist", specialization: "Communications", color: "bg-green-500" },
-    { icon: TrendingUp, name: "General Craftwright", specialization: "Innovation", color: "bg-purple-500" },
-    { icon: TrendingUp, name: "General Merchant", specialization: "Revenue", color: "bg-yellow-500" },
-    { icon: Settings, name: "General Steward", specialization: "Operations", color: "bg-blue-500" },
-  ];
-
-  const generateAIInsights = async () => {
-    if (!document) return;
-    
-    setIsAnalyzing(true);
-    try {
-      // Mock AI analysis - in production this would call your Azure OpenAI endpoint
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setAiInsights({
-        keyPoints: [
-          "Strategic planning document with 3 key objectives",
-          "Revenue growth target of 25% identified",
-          "Market expansion opportunities highlighted"
-        ],
-        actionItems: [
-          "Schedule team meeting within 48 hours",
-          "Create detailed implementation timeline",
-          "Identify key stakeholders for approval"
-        ],
-        strategicRecommendations: [
-          "Consider phased implementation approach",
-          "Allocate additional resources for Q2",
-          "Establish KPI tracking system"
-        ],
-        connections: [
-          "Links to Q1 Strategy Document",
-          "Related to Revenue Forecasting Plan",
-          "Connects with Team Capacity Analysis"
-        ]
-      });
-    } catch (error) {
-      console.error('Error generating AI insights:', error);
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
-
-  const consultGeneral = (general: any) => {
-    console.log(`Consulting ${general.name} for ${general.specialization} advice`);
-    // This would open a consultation dialog or navigate to the general's page
-  };
+const AIAssistantSidebar = ({ document, className = '', onClose }: AIAssistantSidebarProps) => {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [allDocuments, setAllDocuments] = useState<any[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (document) {
-      generateAIInsights();
+    loadAllDocuments();
+  }, []);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const loadAllDocuments = async () => {
+    try {
+      const docs = await getAllDocumentsForAI();
+      setAllDocuments(docs);
+    } catch (error) {
+      console.error('Failed to load documents for AI:', error);
     }
-  }, [document]);
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const sendMessage = async () => {
+    if (!inputMessage.trim() || isLoading) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      type: 'user',
+      content: inputMessage,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputMessage('');
+    setIsLoading(true);
+
+    try {
+      // Create context for the AI
+      let context = '';
+      if (document) {
+        context = `Current Document: "${document.title}"
+Content Type: ${document.content_type}
+Content: ${document.content.substring(0, 2000)}...
+
+`;
+      }
+
+      const prompt = `${context}User Question: ${inputMessage}
+
+Please analyze this in the context of all the user's documents and provide strategic insights.`;
+
+      const response = await callGrandStrategist(prompt);
+      
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'ai',
+        content: response.response || 'I apologize, but I encountered an issue processing your request.',
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      console.error('Error calling Grand Strategist:', error);
+      toast.error('Failed to get AI response');
+      
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'ai',
+        content: 'I apologize, but I encountered an error while processing your request. Please try again.',
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
 
   return (
-    <div className={`w-80 bg-white border-l border-blue-200 p-4 space-y-4 overflow-y-auto ${className}`}>
-      {/* Supreme Commander Header */}
-      <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-blue-100">
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <Brain className="h-6 w-6 text-blue-600" />
-            <div>
-              <CardTitle className="text-lg text-blue-700">Supreme Commander Claude</CardTitle>
-              <p className="text-sm text-blue-600">Your AI Strategic Advisor</p>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
+    <Card className={`w-96 h-full flex flex-col ${className}`}>
+      <CardHeader className="flex-row items-center justify-between space-y-0 pb-3 border-b bg-gradient-to-r from-blue-50 to-teal-50">
+        <CardTitle className="text-lg font-medium text-blue-700 flex items-center gap-2">
+          <Brain className="h-5 w-5" />
+          Grand Strategist Claude
+        </CardTitle>
+        {onClose && (
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </CardHeader>
 
-      {document && (
-        <>
-          {/* Document Analysis */}
-          <Card className="border-blue-200">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-blue-700 flex items-center gap-2">
-                <Lightbulb className="h-4 w-4" />
-                Document Intelligence
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {isAnalyzing ? (
-                <div className="flex items-center gap-2 text-sm text-blue-600">
-                  <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  Analyzing document...
-                </div>
-              ) : aiInsights ? (
-                <>
-                  <div>
-                    <h5 className="font-medium text-blue-700 mb-2">🔍 Key Insights</h5>
-                    <ul className="text-sm space-y-1">
-                      {aiInsights.keyPoints.map((point, idx) => (
-                        <li key={idx} className="text-blue-600">• {point}</li>
-                      ))}
-                    </ul>
-                  </div>
-                  
-                  <div>
-                    <h5 className="font-medium text-blue-700 mb-2">⚡ Action Items</h5>
-                    <ul className="text-sm space-y-1">
-                      {aiInsights.actionItems.map((item, idx) => (
-                        <li key={idx} className="text-blue-600">• {item}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </>
-              ) : (
-                <Button 
-                  onClick={generateAIInsights} 
-                  className="w-full bg-blue-500 hover:bg-blue-600"
-                  size="sm"
-                >
-                  <Zap className="mr-2 h-4 w-4" />
-                  Analyze Document
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Strategic Recommendations */}
-          {aiInsights && (
-            <Card className="border-blue-200">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium text-blue-700">🎯 Strategic Recommendations</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {aiInsights.strategicRecommendations.map((rec, idx) => (
-                  <div key={idx} className="p-2 bg-blue-50 rounded text-sm text-blue-700">
-                    {rec}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-        </>
-      )}
-
-      {/* AI Generals Panel */}
-      <Card className="border-blue-200">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-blue-700">⚔️ AI Generals</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {aiGenerals.map((general, idx) => {
-            const Icon = general.icon;
-            return (
-              <Button
-                key={idx}
-                variant="outline"
-                className="w-full justify-start text-left border-blue-200 hover:bg-blue-50"
-                size="sm"
-                onClick={() => consultGeneral(general)}
+      <CardContent className="flex-1 p-0 flex flex-col">
+        <ScrollArea className="flex-1 p-4">
+          <div className="space-y-4">
+            {messages.length === 0 && (
+              <div className="text-center text-muted-foreground py-8">
+                <Brain className="h-12 w-12 mx-auto mb-4 text-blue-400" />
+                <p className="text-sm">
+                  Ask Grand Strategist Claude anything about your documents, strategies, or for analysis and insights.
+                </p>
+                {document && (
+                  <p className="text-xs mt-2 text-blue-600">
+                    Currently analyzing: {document.title}
+                  </p>
+                )}
+              </div>
+            )}
+            
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div className={`w-2 h-2 rounded-full ${general.color} mr-2`}></div>
-                <div className="flex flex-col items-start">
-                  <span className="font-medium text-blue-700">{general.name}</span>
-                  <span className="text-xs text-blue-500">{general.specialization}</span>
+                <div
+                  className={`max-w-[85%] rounded-lg p-3 ${
+                    message.type === 'user'
+                      ? 'bg-blue-500 text-white ml-4'
+                      : 'bg-blue-50 border border-blue-200 mr-4'
+                  }`}
+                >
+                  {message.type === 'ai' ? (
+                    <AIResponseFormatter content={message.content} />
+                  ) : (
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                  )}
+                  <div className={`text-xs mt-2 opacity-70 ${message.type === 'user' ? 'text-blue-100' : 'text-blue-500'}`}>
+                    {message.timestamp.toLocaleTimeString()}
+                  </div>
                 </div>
-              </Button>
-            );
-          })}
-        </CardContent>
-      </Card>
-
-      {/* Document Connections */}
-      {aiInsights && document && (
-        <Card className="border-blue-200">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-blue-700">🔗 Document Connections</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            {aiInsights.connections.map((connection, idx) => (
-              <div key={idx} className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer">
-                • {connection}
               </div>
             ))}
-          </CardContent>
-        </Card>
-      )}
-    </div>
+            
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mr-4">
+                  <div className="flex items-center gap-2 text-blue-600">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Analyzing...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <div ref={messagesEndRef} />
+        </ScrollArea>
+
+        <div className="p-4 border-t bg-white">
+          <div className="flex gap-2">
+            <Textarea
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Ask about strategies, analysis, or insights..."
+              className="min-h-[60px] resize-none border-blue-200 focus:border-blue-400"
+              disabled={isLoading}
+            />
+            <Button 
+              onClick={sendMessage} 
+              disabled={!inputMessage.trim() || isLoading}
+              className="bg-blue-500 hover:bg-blue-600 self-end"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

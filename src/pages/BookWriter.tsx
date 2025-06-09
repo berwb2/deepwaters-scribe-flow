@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
+import AIAssistantSidebar from '@/components/AIAssistantSidebar';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -44,8 +44,7 @@ const BookWriter = () => {
   const [isCreatingBook, setIsCreatingBook] = useState(false);
   const [newBookTitle, setNewBookTitle] = useState('');
   const [newBookGenre, setNewBookGenre] = useState('Fiction');
-  const [aiHelp, setAiHelp] = useState('');
-  const [isGettingHelp, setIsGettingHelp] = useState(false);
+  const [showAISidebar, setShowAISidebar] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -249,44 +248,29 @@ const BookWriter = () => {
     }
   };
 
-  const getWritingHelp = async () => {
-    if (!activeChapter || !activeBook) return;
-
-    setIsGettingHelp(true);
-    try {
-      const context = `Book: "${activeBook.title}"
-Current Chapter: "${activeChapter.title}"
-Chapter Content: ${activeChapter.content}
-Previous Chapters: ${activeBook.chapters.slice(0, activeChapter.order - 1).map(ch => `${ch.title}: ${ch.content.substring(0, 200)}...`).join('\n\n')}`;
-
-      const { data, error } = await supabase.functions.invoke('grand-strategist', {
-        body: {
-          message: `As Grand Strategist Claude, help me with my book writing. ${context}
-
-Please provide specific writing assistance including:
-1. Suggestions for continuing the current chapter
-2. Character development ideas
-3. Plot advancement recommendations
-4. Writing style improvements
-5. Story structure guidance
-
-Based on the current content and context, what should I write next?`,
-          documents: documents,
-          analysis_mode: 'writing'
-        }
-      });
-
-      if (error) throw error;
-      setAiHelp(data.response);
-    } catch (error) {
-      console.error('Error getting AI help:', error);
-      toast.error('Failed to get writing help');
-    } finally {
-      setIsGettingHelp(false);
-    }
+  // Create a mock document for AI context when writing chapters
+  const getChapterDocument = () => {
+    if (!activeChapter || !activeBook) return undefined;
+    
+    return {
+      id: activeChapter.id,
+      title: `${activeBook.title} - ${activeChapter.title}`,
+      content: activeChapter.content,
+      content_type: 'chapter' as any,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      user_id: user?.id || '',
+      is_template: false,
+      metadata: {
+        bookTitle: activeBook.title,
+        bookGenre: activeBook.genre,
+        chapterOrder: activeChapter.order
+      }
+    };
   };
 
   if (!activeBook) {
+    
     return (
       <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
         <Navbar />
@@ -472,49 +456,37 @@ Based on the current content and context, what should I write next?`,
             {activeChapter ? (
               <>
                 <div className="p-6 border-b border-blue-200 bg-white">
-                  <Input
-                    value={activeChapter.title}
-                    onChange={(e) => updateChapterTitle(activeChapter.id, e.target.value)}
-                    className="text-xl font-serif border-blue-200 mb-2"
-                    placeholder="Chapter Title"
-                  />
-                  <div className="text-sm text-blue-600">
-                    {activeChapter.wordCount} words
-                  </div>
-                </div>
-
-                <div className="flex-1 flex">
-                  <div className="flex-1 p-6">
-                    <Textarea
-                      value={activeChapter.content}
-                      onChange={(e) => updateChapterContent(activeChapter.id, e.target.value)}
-                      className="w-full h-full min-h-[600px] border-blue-200 text-base leading-relaxed resize-none"
-                      placeholder="Start writing your chapter..."
-                    />
-                  </div>
-
-                  {aiHelp && (
-                    <div className="w-80 border-l border-blue-200 bg-blue-50 p-4">
-                      <h4 className="font-medium text-blue-700 mb-3 flex items-center gap-2">
-                        <Brain className="h-4 w-4" />
-                        AI Writing Assistant
-                      </h4>
-                      <div className="text-sm text-blue-700 leading-relaxed whitespace-pre-wrap">
-                        {aiHelp}
+                  <div className="flex justify-between items-center">
+                    <div className="flex-1">
+                      <Input
+                        value={activeChapter.title}
+                        onChange={(e) => updateChapterTitle(activeChapter.id, e.target.value)}
+                        className="text-xl font-serif border-blue-200 mb-2"
+                        placeholder="Chapter Title"
+                      />
+                      <div className="text-sm text-blue-600">
+                        {activeChapter.wordCount} words
                       </div>
                     </div>
-                  )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAISidebar(!showAISidebar)}
+                      className={`ml-4 border-blue-200 ${showAISidebar ? 'bg-blue-50 text-blue-700' : 'text-blue-600 hover:bg-blue-50'}`}
+                    >
+                      <Brain className="mr-2 h-4 w-4" />
+                      Grand Strategist Claude
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="p-6 border-t border-blue-200 bg-white">
-                  <Button 
-                    onClick={getWritingHelp}
-                    disabled={isGettingHelp}
-                    className="bg-blue-500 hover:bg-blue-600"
-                  >
-                    <Brain className="mr-2 h-4 w-4" />
-                    {isGettingHelp ? 'Getting Help...' : 'Get Writing Help from Grand Strategist'}
-                  </Button>
+                <div className="flex-1 p-6">
+                  <Textarea
+                    value={activeChapter.content}
+                    onChange={(e) => updateChapterContent(activeChapter.id, e.target.value)}
+                    className="w-full h-full min-h-[600px] border-blue-200 text-base leading-relaxed resize-none"
+                    placeholder="Start writing your chapter..."
+                  />
                 </div>
               </>
             ) : (
@@ -533,6 +505,15 @@ Based on the current content and context, what should I write next?`,
             )}
           </div>
         </main>
+        
+        {/* AI Assistant Sidebar */}
+        {showAISidebar && (
+          <AIAssistantSidebar 
+            document={getChapterDocument()}
+            className="fixed right-0 top-16 h-[calc(100vh-4rem)] shadow-lg z-40"
+            onClose={() => setShowAISidebar(false)}
+          />
+        )}
       </div>
       
       <footer className="py-6 border-t border-blue-200 bg-blue-50">

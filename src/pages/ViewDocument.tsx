@@ -162,7 +162,7 @@ const ViewDocument = () => {
                 className={`border-blue-200 ${showAISidebar ? 'bg-blue-50 text-blue-700' : 'text-blue-600 hover:bg-blue-50'}`}
               >
                 <Brain className="mr-2 h-4 w-4" />
-                AI Assistant
+                Grand Strategist Claude
               </Button>
             </div>
             
@@ -215,6 +215,7 @@ const ViewDocument = () => {
           <AIAssistantSidebar 
             document={typedDocument}
             className="fixed right-0 top-16 h-[calc(100vh-4rem)] shadow-lg z-40"
+            onClose={() => setShowAISidebar(false)}
           />
         )}
       </div>
