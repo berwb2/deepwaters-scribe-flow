@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, MoreVertical } from "lucide-react";
-import { format, formatDistance } from "date-fns";
+import { format, formatDistance, isValid } from "date-fns";
 import { DocType, DocumentMeta } from '@/types/documents';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
@@ -50,13 +50,26 @@ interface DocumentCardProps {
 }
 
 const DocumentCard = ({ document, onUpdate, contextMenuItems }: DocumentCardProps) => {
-  // Handle both string and Date types for updated_at
-  const updatedAtDate = typeof document.updated_at === 'string' 
-    ? new Date(document.updated_at) 
-    : document.updated_at;
+  // Handle both string and Date types for updated_at with proper validation
+  const createValidDate = (dateValue: string | Date): Date => {
+    if (!dateValue) {
+      return new Date(); // Fallback to current date if no date provided
+    }
+    
+    const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+    return isValid(date) ? date : new Date(); // Fallback to current date if invalid
+  };
 
-  const formattedDate = format(updatedAtDate, 'MMM dd, yyyy');
-  const timeAgo = formatDistance(updatedAtDate, new Date(), { addSuffix: true });
+  const updatedAtDate = createValidDate(document.updated_at);
+  
+  // Only format if we have a valid date
+  const formattedDate = isValid(updatedAtDate) 
+    ? format(updatedAtDate, 'MMM dd, yyyy')
+    : 'Unknown date';
+    
+  const timeAgo = isValid(updatedAtDate)
+    ? formatDistance(updatedAtDate, new Date(), { addSuffix: true })
+    : 'Unknown time';
   
   // Get first 100 characters of content for preview
   const contentPreview = document.content?.substring(0, 100) + (document.content && document.content.length > 100 ? '...' : '') || 'No content';
