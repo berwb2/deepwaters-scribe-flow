@@ -19,7 +19,7 @@ const Documents = () => {
   const [selectedType, setSelectedType] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(100); // Increased from default to show more documents
+  const [pageSize, setPageSize] = useState(100); // Now it's a state variable
   const isMobile = useIsMobile();
 
   const { data: user } = useQuery({
