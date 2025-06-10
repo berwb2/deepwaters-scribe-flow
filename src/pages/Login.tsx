@@ -76,7 +76,7 @@ const Login = () => {
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-background to-water-light/20">
       <header className="container mx-auto px-4 py-6">
         <Link to="/" className="flex items-center">
-          <Logo size="small" />
+          <Logo size="sm" />
         </Link>
       </header>
       

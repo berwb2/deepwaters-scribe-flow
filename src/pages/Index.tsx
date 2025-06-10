@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -44,7 +43,7 @@ const Index = () => {
       <section className="relative bg-gradient-to-b from-background to-blue-50 py-20 md:py-32 overflow-hidden">
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
-            <Logo size="large" className="mx-auto mb-8" />
+            <Logo size="lg" className="mx-auto mb-8" />
             <h1 className="mb-6 text-4xl md:text-6xl font-serif">
               Welcome to DeepWaters—<br className="hidden sm:block" />
               <span className="text-blue-600">a serene space</span> for planning, reflection, and growth
@@ -257,7 +256,7 @@ const Index = () => {
       <footer className="py-10 border-t bg-white">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <Logo size="small" />
+            <Logo size="sm" />
             <div className="mt-4 md:mt-0 text-blue-600">
               © {new Date().getFullYear()} DeepWaters. All rights reserved.
             </div>
