@@ -11,7 +11,7 @@ const Logo = ({ className = '', showText = true, size = 'md' }: LogoProps) => {
   const sizeClasses = {
     sm: 'h-6 w-6',
     md: 'h-8 w-8',
-    lg: 'h-12 w-12'
+    lg: 'h-10 w-10'
   };
 
   const textSizeClasses = {
@@ -22,11 +22,11 @@ const Logo = ({ className = '', showText = true, size = 'md' }: LogoProps) => {
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <div className={`${sizeClasses[size]} bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center shadow-lg`}>
+      <div className={`${sizeClasses[size]} bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center shadow-lg flex-shrink-0`}>
         <span className="text-white font-bold text-sm">🌊</span>
       </div>
       {showText && (
-        <span className={`font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent ${textSizeClasses[size]}`}>
+        <span className={`font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent ${textSizeClasses[size]} whitespace-nowrap`}>
           DeepWaters
         </span>
       )}

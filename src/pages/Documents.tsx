@@ -19,7 +19,7 @@ const Documents = () => {
   const [selectedType, setSelectedType] = useState<string>('all');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(100); // Now it's a state variable
+  const [pageSize, setPageSize] = useState(100);
   const isMobile = useIsMobile();
 
   const { data: user } = useQuery({
@@ -83,7 +83,7 @@ const Documents = () => {
       <div className="flex">
         {!isMobile && <Sidebar />}
         
-        <main className={`flex-1 ${isMobile ? 'px-4 pt-20' : 'p-6'}`}>
+        <main className={`flex-1 ${isMobile ? 'px-4 pt-4' : 'p-6'}`}>
           <div className="max-w-7xl mx-auto">
             {/* Header */}
             <div className="flex flex-col gap-4 mb-6">
@@ -94,13 +94,12 @@ const Documents = () => {
                     Manage and organize your documents ({totalDocuments} total)
                   </p>
                 </div>
-                <Button 
-                  onClick={() => setIsCreateDialogOpen(true)} 
-                  className={isMobile ? 'fixed bottom-6 right-6 rounded-full h-14 w-14 shadow-lg z-10' : ''}
-                >
-                  <Plus className="h-4 w-4" />
-                  {!isMobile && <span className="ml-2">Create New Document</span>}
-                </Button>
+                {!isMobile && (
+                  <Button onClick={() => setIsCreateDialogOpen(true)}>
+                    <Plus className="h-4 w-4" />
+                    <span className="ml-2">Create New Document</span>
+                  </Button>
+                )}
               </div>
 
               {/* Search and Filters */}
@@ -172,6 +171,16 @@ const Documents = () => {
           </div>
         </main>
       </div>
+
+      {/* Mobile FAB */}
+      {isMobile && (
+        <Button 
+          onClick={() => setIsCreateDialogOpen(true)} 
+          className="fixed bottom-6 right-6 rounded-full h-14 w-14 shadow-lg z-10"
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      )}
 
       <CreateDocumentDialog
         isOpen={isCreateDialogOpen}

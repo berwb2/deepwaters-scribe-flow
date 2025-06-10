@@ -43,10 +43,9 @@ const Navbar = () => {
     <nav className="border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center space-x-8">
-            <Link to={user ? "/dashboard" : "/"} className="flex items-center space-x-2">
-              <Logo className="h-8 w-8" />
-              <span className="font-serif text-xl font-medium text-blue-600">DeepWaters</span>
+          <div className="flex items-center">
+            <Link to={user ? "/dashboard" : "/"} className="flex items-center">
+              <Logo size="md" showText={true} />
             </Link>
           </div>
           

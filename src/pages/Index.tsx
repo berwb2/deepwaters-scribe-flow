@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -42,13 +43,15 @@ const Index = () => {
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-background to-blue-50 py-20 md:py-32 overflow-hidden">
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-3xl mx-auto text-center">
-            <Logo size="lg" className="mx-auto mb-8" />
-            <h1 className="mb-6 text-4xl md:text-6xl font-serif">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="mb-8">
+              <Logo size="lg" className="mx-auto" />
+            </div>
+            <h1 className="mb-6 text-4xl md:text-6xl font-serif leading-tight">
               Welcome to DeepWaters—<br className="hidden sm:block" />
               <span className="text-blue-600">a serene space</span> for planning, reflection, and growth
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-blue-700">
+            <p className="text-xl md:text-2xl mb-8 text-blue-700 leading-relaxed max-w-3xl mx-auto">
               Transform your lengthy plans, doctrines, and reflections into beautifully structured, 
               easy-to-navigate documents with AI-powered strategic insights.
             </p>
@@ -84,7 +87,7 @@ const Index = () => {
             Experience Clarity in Your Planning
           </h2>
           
-          <div className="grid md:grid-cols-3 gap-10">
+          <div className="grid md:grid-cols-3 gap-10 max-w-6xl mx-auto">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 flex flex-col items-center text-center shadow-sm hover:shadow-md transition-shadow">
               <div className="p-4 bg-blue-100 rounded-full mb-6">
                 <File className="h-10 w-10 text-blue-600" />
@@ -121,7 +124,7 @@ const Index = () => {
       {/* Feature Details Section */}
       <section className="py-20 bg-blue-50">
         <div className="container mx-auto px-4">
-          <div className="max-w-5xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-serif text-center mb-16 text-blue-600">
               Powerful Features
             </h2>
