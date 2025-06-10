@@ -9,6 +9,158 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ai_sessions: {
+        Row: {
+          chapter_id: string | null
+          chat_history: Json | null
+          context_summary: string | null
+          created_at: string | null
+          document_id: string | null
+          id: string
+          is_active: boolean | null
+          session_type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          chapter_id?: string | null
+          chat_history?: Json | null
+          context_summary?: string | null
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          session_type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          chapter_id?: string | null
+          chat_history?: Json | null
+          context_summary?: string | null
+          created_at?: string | null
+          document_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          session_type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_sessions_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_sessions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      books: {
+        Row: {
+          cover_image_url: string | null
+          created_at: string | null
+          description: string | null
+          genre: string | null
+          id: string
+          metadata: Json | null
+          status: string | null
+          target_word_count: number | null
+          title: string
+          updated_at: string | null
+          user_id: string
+          word_count: number | null
+        }
+        Insert: {
+          cover_image_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          genre?: string | null
+          id?: string
+          metadata?: Json | null
+          status?: string | null
+          target_word_count?: number | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+          word_count?: number | null
+        }
+        Update: {
+          cover_image_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          genre?: string | null
+          id?: string
+          metadata?: Json | null
+          status?: string | null
+          target_word_count?: number | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+          word_count?: number | null
+        }
+        Relationships: []
+      }
+      chapters: {
+        Row: {
+          ai_analysis: Json | null
+          book_id: string
+          chapter_number: number
+          content: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          status: string | null
+          title: string
+          updated_at: string | null
+          user_id: string
+          word_count: number | null
+        }
+        Insert: {
+          ai_analysis?: Json | null
+          book_id: string
+          chapter_number: number
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          user_id: string
+          word_count?: number | null
+        }
+        Update: {
+          ai_analysis?: Json | null
+          book_id?: string
+          chapter_number?: number
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+          word_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chapters_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       collection_documents: {
         Row: {
           added_at: string
@@ -170,6 +322,7 @@ export type Database = {
       }
       documents: {
         Row: {
+          ai_analysis: Json | null
           content: string
           content_type: string
           created_at: string
@@ -179,8 +332,10 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          word_count: number | null
         }
         Insert: {
+          ai_analysis?: Json | null
           content: string
           content_type: string
           created_at?: string
@@ -190,8 +345,10 @@ export type Database = {
           title: string
           updated_at?: string
           user_id: string
+          word_count?: number | null
         }
         Update: {
+          ai_analysis?: Json | null
           content?: string
           content_type?: string
           created_at?: string
@@ -201,6 +358,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          word_count?: number | null
         }
         Relationships: []
       }

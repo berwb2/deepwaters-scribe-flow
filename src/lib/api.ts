@@ -116,7 +116,8 @@ export const updateUserProfile = async (updates: { display_name?: string }) => {
   return data;
 };
 
-// Folder Management Functions
+// Folder Management Functions - keep existing code the same
+
 export interface FolderCreationData {
   name: string;
   description?: string | null;
@@ -151,6 +152,8 @@ export const createFolder = async (folderData: FolderCreationData) => {
 
   return data;
 };
+
+// ... keep existing code (folder management functions) the same
 
 export const listFolders = async () => {
   const { data: { user } } = await supabase.auth.getUser();
@@ -204,6 +207,8 @@ export const listFolders = async () => {
 
   return { folders };
 };
+
+// ... keep existing code (other folder functions) the same
 
 export const getFolder = async (folderId: string) => {
   const { data: { user } } = await supabase.auth.getUser();
@@ -271,7 +276,8 @@ export const deleteFolder = async (folderId: string) => {
   return { success: true };
 };
 
-// Folder-Document relationship functions
+// ... keep existing code (folder-document relationships) the same
+
 export const addDocumentToFolder = async (folderId: string, documentId: string) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
@@ -436,11 +442,16 @@ export const getDocumentTags = async (documentId: string) => {
   return data || [];
 };
 
-// Grand Strategist API call
-export const callGrandStrategist = async (prompt: string) => {
+// Grand Strategist API call - ENHANCED VERSION
+export const callGrandStrategist = async (prompt: string, documentContext?: { id: string; title: string; content: string; type: 'document' | 'chapter' }) => {
   try {
+    console.log('Calling Grand Strategist with context:', documentContext ? 'Yes' : 'No');
+    
     const { data, error } = await supabase.functions.invoke('grand-strategist', {
-      body: { prompt }
+      body: { 
+        prompt,
+        documentContext
+      }
     });
 
     if (error) {
@@ -455,12 +466,90 @@ export const callGrandStrategist = async (prompt: string) => {
   }
 };
 
+// AI Session Management
+export const createAISession = async (documentId: string, documentType: 'document' | 'chapter') => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const sessionData = {
+    user_id: user.id,
+    session_type: documentType,
+    chat_history: [],
+    is_active: true
+  };
+
+  if (documentType === 'document') {
+    sessionData.document_id = documentId;
+  } else {
+    sessionData.chapter_id = documentId;
+  }
+
+  const { data, error } = await supabase
+    .from('ai_sessions')
+    .insert(sessionData)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating AI session:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const getAISession = async (documentId: string, documentType: 'document' | 'chapter') => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('ai_sessions')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq(documentType === 'document' ? 'document_id' : 'chapter_id', documentId)
+    .eq('session_type', documentType)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching AI session:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const updateAISession = async (sessionId: string, updates: { chat_history?: any[]; context_summary?: string }) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('ai_sessions')
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', sessionId)
+    .eq('user_id', user.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating AI session:', error);
+    throw error;
+  }
+
+  return data;
+};
+
 // Document management functions
 export const listDocuments = async (
   filters: { contentType?: string } = {},
   sortBy: { field: string; direction: 'asc' | 'desc' } = { field: 'created_at', direction: 'desc' },
   page: number = 1,
-  pageSize: number = 50 // Increased default page size for better context
+  pageSize: number = 50
 ) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
@@ -611,43 +700,220 @@ export const deleteDocument = async (documentId: string) => {
   return { success: true };
 };
 
-// Placeholder book functions (temporarily disabled)
-export const createBook = async (bookData: { title: string; description?: string | null }) => {
-  throw new Error('Book functionality is temporarily unavailable');
+// Book functions - NOW WORKING
+export const createBook = async (bookData: { title: string; description?: string | null; genre?: string }) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('books')
+    .insert({
+      user_id: user.id,
+      title: bookData.title,
+      description: bookData.description,
+      genre: bookData.genre,
+      status: 'draft'
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating book:', error);
+    throw error;
+  }
+
+  return data;
 };
 
 export const listBooks = async () => {
-  return { books: [] };
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('books')
+    .select(`
+      *,
+      chapters!chapters_book_id_fkey(id)
+    `)
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching books:', error);
+    throw error;
+  }
+
+  const books = data?.map(book => ({
+    ...book,
+    chapter_count: book.chapters?.length || 0
+  })) || [];
+
+  return { books };
 };
 
 export const getBook = async (bookId: string) => {
-  throw new Error('Book functionality is temporarily unavailable');
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('books')
+    .select('*')
+    .eq('id', bookId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching book:', error);
+    throw error;
+  }
+
+  return data;
 };
 
 export const updateBook = async (bookId: string, updates: any) => {
-  throw new Error('Book functionality is temporarily unavailable');
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('books')
+    .update(updates)
+    .eq('id', bookId)
+    .eq('user_id', user.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating book:', error);
+    throw error;
+  }
+
+  return data;
 };
 
 export const deleteBook = async (bookId: string) => {
-  throw new Error('Book functionality is temporarily unavailable');
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { error } = await supabase
+    .from('books')
+    .delete()
+    .eq('id', bookId)
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('Error deleting book:', error);
+    throw error;
+  }
+
+  return { success: true };
 };
 
-export const createChapter = async (chapterData: any) => {
-  throw new Error('Chapter functionality is temporarily unavailable');
+// Chapter functions - NOW WORKING
+export const createChapter = async (chapterData: {
+  book_id: string;
+  title: string;
+  content?: string;
+  chapter_number: number;
+}) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('chapters')
+    .insert({
+      user_id: user.id,
+      book_id: chapterData.book_id,
+      title: chapterData.title,
+      content: chapterData.content || '',
+      chapter_number: chapterData.chapter_number,
+      status: 'draft'
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating chapter:', error);
+    throw error;
+  }
+
+  return data;
 };
 
 export const listBookChapters = async (bookId: string) => {
-  return { chapters: [] };
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('chapters')
+    .select('*')
+    .eq('book_id', bookId)
+    .eq('user_id', user.id)
+    .order('chapter_number');
+
+  if (error) {
+    console.error('Error fetching chapters:', error);
+    throw error;
+  }
+
+  return { chapters: data || [] };
 };
 
 export const getChapter = async (chapterId: string) => {
-  throw new Error('Chapter functionality is temporarily unavailable');
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('chapters')
+    .select(`
+      *,
+      books!inner(title, description)
+    `)
+    .eq('id', chapterId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching chapter:', error);
+    throw error;
+  }
+
+  return data;
 };
 
 export const updateChapter = async (chapterId: string, updates: any) => {
-  throw new Error('Chapter functionality is temporarily unavailable');
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('chapters')
+    .update(updates)
+    .eq('id', chapterId)
+    .eq('user_id', user.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating chapter:', error);
+    throw error;
+  }
+
+  return data;
 };
 
 export const deleteChapter = async (chapterId: string) => {
-  throw new Error('Chapter functionality is temporarily unavailable');
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { error } = await supabase
+    .from('chapters')
+    .delete()
+    .eq('id', chapterId)
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('Error deleting chapter:', error);
+    throw error;
+  }
+
+  return { success: true };
 };

@@ -40,12 +40,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       }),
       CodeBlock.configure({
         HTMLAttributes: {
-          class: 'code-block',
+          class: 'code-block bg-gray-900 text-green-400 p-4 rounded-lg my-4 overflow-x-auto',
         },
       }),
       Link.configure({
         openOnClick: false,
         validate: href => /^https?:\/\//.test(href),
+        HTMLAttributes: {
+          class: 'text-blue-600 hover:text-blue-800 underline',
+        },
       }),
       Placeholder.configure({
         placeholder,
@@ -57,9 +60,9 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       Table.configure({
         resizable: true,
         handleWidth: 5,
-        cellMinWidth: 25,
+        cellMinWidth: 50,
         HTMLAttributes: {
-          class: 'table-auto w-full border-collapse border border-blue-300',
+          class: 'table-auto w-full border-collapse border border-blue-300 my-4',
         },
       }),
       TableRow.configure({
@@ -69,12 +72,12 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       }),
       TableHeader.configure({
         HTMLAttributes: {
-          class: 'border border-blue-300 bg-blue-50 p-2 font-semibold text-left',
+          class: 'border border-blue-300 bg-blue-50 p-3 font-semibold text-left',
         },
       }),
       TableCell.configure({
         HTMLAttributes: {
-          class: 'border border-blue-300 p-2 break-words',
+          class: 'border border-blue-300 p-3 break-words',
         },
       }),
     ],
@@ -85,13 +88,37 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-blue max-w-none focus:outline-none',
+        class: 'prose prose-blue prose-lg max-w-none focus:outline-none min-h-[400px] leading-relaxed',
+        style: 'font-family: Georgia, serif; line-height: 1.8;',
       },
       transformPastedHTML(html) {
         return html;
       },
       transformPastedText(text) {
-        return text.replace(/\n/g, '<br>');
+        // Enhanced paste handling for better formatting
+        let formatted = text;
+        
+        // Auto-format headers
+        formatted = formatted.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+        formatted = formatted.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+        formatted = formatted.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+        
+        // Auto-format bullet points
+        formatted = formatted.replace(/^[•\-\*] (.+)$/gm, '<li>$1</li>');
+        
+        // Auto-format numbered lists
+        formatted = formatted.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+        
+        // Wrap consecutive list items
+        formatted = formatted.replace(/(<li>.*?<\/li>(?:\s*<li>.*?<\/li>)*)/gs, '<ul>$1</ul>');
+        
+        // Auto-format paragraphs
+        formatted = formatted.replace(/^([^<\n#•\-\*\d].+)$/gm, '<p>$1</p>');
+        
+        // Preserve double line breaks as paragraph breaks
+        formatted = formatted.replace(/\n\n/g, '</p><p>');
+        
+        return formatted;
       },
     },
   });
@@ -132,28 +159,134 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       </div>
       <EditorStylesheet />
       <style>{`
+        /* Enhanced styling for luxury reading experience */
+        .ProseMirror {
+          font-family: Georgia, 'Times New Roman', serif !important;
+          line-height: 1.8 !important;
+          font-size: 16px !important;
+          color: #374151 !important;
+          word-wrap: break-word !important;
+          overflow-wrap: break-word !important;
+        }
+        
+        .ProseMirror h1 {
+          font-size: 2.25em !important;
+          font-weight: 700 !important;
+          color: #1f2937 !important;
+          margin-top: 2rem !important;
+          margin-bottom: 1rem !important;
+          padding-bottom: 0.5rem !important;
+          border-bottom: 2px solid #e5e7eb !important;
+        }
+        
+        .ProseMirror h2 {
+          font-size: 1.875em !important;
+          font-weight: 600 !important;
+          color: #374151 !important;
+          margin-top: 1.5rem !important;
+          margin-bottom: 0.75rem !important;
+        }
+        
+        .ProseMirror h3 {
+          font-size: 1.5em !important;
+          font-weight: 600 !important;
+          color: #4b5563 !important;
+          margin-top: 1.25rem !important;
+          margin-bottom: 0.5rem !important;
+        }
+        
+        .ProseMirror p {
+          margin-bottom: 1.25rem !important;
+          text-align: justify !important;
+          word-spacing: 0.1em !important;
+        }
+        
+        .ProseMirror ul, .ProseMirror ol {
+          margin: 1rem 0 !important;
+          padding-left: 1.5rem !important;
+        }
+        
+        .ProseMirror li {
+          margin-bottom: 0.5rem !important;
+          line-height: 1.7 !important;
+        }
+        
         .ProseMirror table {
-          table-layout: fixed !important;
           width: 100% !important;
+          border-collapse: collapse !important;
+          margin: 1.5rem 0 !important;
           word-wrap: break-word !important;
         }
+        
         .ProseMirror table td,
         .ProseMirror table th {
           word-wrap: break-word !important;
           overflow-wrap: break-word !important;
           hyphens: auto !important;
           white-space: normal !important;
+          vertical-align: top !important;
+          padding: 0.75rem !important;
         }
-        .ProseMirror p {
-          word-wrap: break-word !important;
-          overflow-wrap: break-word !important;
+        
+        .ProseMirror blockquote {
+          border-left: 4px solid #3b82f6 !important;
+          padding-left: 1rem !important;
+          margin: 1.5rem 0 !important;
+          font-style: italic !important;
+          color: #6b7280 !important;
+          background-color: #f8fafc !important;
+          padding: 1rem !important;
+          border-radius: 0.375rem !important;
         }
+        
+        .ProseMirror strong {
+          font-weight: 700 !important;
+          color: #1f2937 !important;
+        }
+        
+        .ProseMirror em {
+          font-style: italic !important;
+          color: #374151 !important;
+        }
+        
         .ProseMirror .is-editor-empty:first-child::before {
-          color: #9ca3af;
-          content: attr(data-placeholder);
-          float: left;
-          height: 0;
-          pointer-events: none;
+          color: #9ca3af !important;
+          content: attr(data-placeholder) !important;
+          float: left !important;
+          height: 0 !important;
+          pointer-events: none !important;
+          font-style: italic !important;
+        }
+        
+        /* Code block styling */
+        .ProseMirror pre {
+          background: #1f2937 !important;
+          color: #d1d5db !important;
+          padding: 1rem !important;
+          border-radius: 0.5rem !important;
+          margin: 1rem 0 !important;
+          overflow-x: auto !important;
+          font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+        }
+        
+        .ProseMirror code {
+          background: #f3f4f6 !important;
+          color: #ef4444 !important;
+          padding: 0.125rem 0.25rem !important;
+          border-radius: 0.25rem !important;
+          font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+          font-size: 0.875em !important;
+        }
+        
+        /* Link styling */
+        .ProseMirror a {
+          color: #3b82f6 !important;
+          text-decoration: underline !important;
+          font-weight: 500 !important;
+        }
+        
+        .ProseMirror a:hover {
+          color: #1d4ed8 !important;
         }
       `}</style>
     </div>

@@ -1,116 +1,118 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown, ChevronUp, List } from 'lucide-react';
 
 interface TocItem {
   id: string;
   text: string;
   level: number;
+  element?: Element;
 }
 
 interface TableOfContentsProps {
-  contentRef: React.RefObject<HTMLDivElement>;
+  content: string;
+  className?: string;
+  defaultOpen?: boolean;
 }
 
-const TableOfContents = ({ contentRef }: TableOfContentsProps) => {
-  const [tocItems, setTocItems] = useState<TocItem[]>([]);
-  const [activeSection, setActiveSection] = useState<string>('');
-  const [isCollapsed, setIsCollapsed] = useState(false);
+const TableOfContents: React.FC<TableOfContentsProps> = ({ 
+  content, 
+  className = '', 
+  defaultOpen = true 
+}) => {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
 
-  useEffect(() => {
-    if (!contentRef.current) return;
-
-    const headings = contentRef.current.querySelectorAll('h1, h2, h3, h4, h5, h6');
-    const items: TocItem[] = Array.from(headings).map((heading, index) => {
-      const level = parseInt(heading.tagName.charAt(1));
-      const text = heading.textContent || '';
-      const id = heading.id || `heading-${index}`;
+  const generateTableOfContents = (): TocItem[] => {
+    if (!content) return [];
+    
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(content, 'text/html');
+      const headings = doc.querySelectorAll('h1, h2, h3, h4, h5, h6');
       
-      // Ensure heading has an ID for scrolling
-      if (!heading.id) {
-        heading.id = id;
-      }
-      
-      return { id, text, level };
-    });
-
-    setTocItems(items);
-  }, [contentRef]);
-
-  useEffect(() => {
-    if (!contentRef.current || tocItems.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveSection(entry.target.id);
-          }
-        });
-      },
-      { rootMargin: '-20% 0px -80% 0px' }
-    );
-
-    tocItems.forEach((item) => {
-      const element = document.getElementById(item.id);
-      if (element) observer.observe(element);
-    });
-
-    return () => observer.disconnect();
-  }, [tocItems, contentRef]);
-
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return Array.from(headings).map((heading, index) => ({
+        id: `heading-${index}`,
+        text: heading.textContent?.trim() || '',
+        level: parseInt(heading.tagName[1]),
+        element: heading
+      })).filter(item => item.text.length > 0);
+    } catch (error) {
+      console.error('Error generating table of contents:', error);
+      return [];
     }
   };
 
-  if (tocItems.length === 0) return null;
+  const tableOfContents = generateTableOfContents();
+
+  const scrollToHeading = (level: number, text: string) => {
+    // Find the actual heading element in the document
+    const headings = document.querySelectorAll(`h${level}`);
+    const targetHeading = Array.from(headings).find(h => 
+      h.textContent?.trim() === text
+    );
+    
+    if (targetHeading) {
+      targetHeading.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start',
+        inline: 'nearest'
+      });
+    }
+  };
+
+  if (tableOfContents.length === 0) {
+    return null;
+  }
 
   return (
-    <div className="w-64 sticky top-6 h-fit">
-      <Card className="border-blue-200 bg-blue-50/50">
-        <Collapsible open={!isCollapsed} onOpenChange={setIsCollapsed}>
-          <CardHeader className="pb-3">
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" className="justify-between p-0 h-auto font-medium text-blue-700 hover:text-blue-800">
-                <CardTitle className="text-sm">Table of Contents</CardTitle>
-                {isCollapsed ? (
-                  <ChevronRight className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
-            </CollapsibleTrigger>
+    <Card className={`${className}`}>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger asChild>
+          <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium text-blue-600 flex items-center">
+                <List className="mr-2 h-4 w-4" />
+                Table of Contents
+              </CardTitle>
+              {isOpen ? (
+                <ChevronUp className="h-4 w-4 text-gray-500" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-gray-500" />
+              )}
+            </div>
           </CardHeader>
-          
-          <CollapsibleContent>
-            <CardContent className="pt-0">
-              <nav className="space-y-1">
-                {tocItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => scrollToSection(item.id)}
-                    className={`block w-full text-left text-sm py-1 px-2 rounded transition-colors hover:bg-blue-100 ${
-                      activeSection === item.id
-                        ? 'bg-blue-100 text-blue-700 font-medium'
-                        : 'text-blue-600 hover:text-blue-700'
-                    }`}
-                    style={{ paddingLeft: `${(item.level - 1) * 12 + 8}px` }}
-                  >
+        </CollapsibleTrigger>
+        
+        <CollapsibleContent>
+          <CardContent className="pt-0">
+            <nav className="space-y-1 max-h-96 overflow-y-auto">
+              {tableOfContents.map((item, index) => (
+                <Button
+                  key={`${item.id}-${index}`}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => scrollToHeading(item.level, item.text)}
+                  className={`w-full justify-start text-left h-auto py-2 px-2 hover:bg-blue-50 hover:text-blue-700 transition-colors ${
+                    item.level === 1 ? 'font-medium text-gray-900 pl-2' :
+                    item.level === 2 ? 'text-gray-700 pl-4' :
+                    item.level === 3 ? 'text-gray-600 pl-6' :
+                    item.level === 4 ? 'text-gray-500 pl-8' :
+                    'text-gray-400 pl-10'
+                  }`}
+                >
+                  <span className="text-xs block truncate leading-relaxed">
                     {item.text}
-                  </button>
-                ))}
-              </nav>
-            </CardContent>
-          </CollapsibleContent>
-        </Collapsible>
-      </Card>
-    </div>
+                  </span>
+                </Button>
+              ))}
+            </nav>
+          </CardContent>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
   );
 };
 
