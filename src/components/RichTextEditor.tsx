@@ -22,12 +22,14 @@ interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
   placeholder?: string;
+  editable?: boolean;
 }
 
 const RichTextEditor: React.FC<RichTextEditorProps> = ({ 
   content, 
   onChange,
-  placeholder = 'Write or paste your document content here...'
+  placeholder = 'Start writing your document content here...',
+  editable = true
 }) => {
   const editor = useEditor({
     extensions: [
@@ -77,6 +79,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       }),
     ],
     content,
+    editable,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
@@ -93,6 +96,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     },
   });
 
+  // Update editor content when prop changes
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content, false);
+    }
+  }, [editor, content]);
+
   useEffect(() => {
     if (editor) {
       const codeBlocks = document.querySelectorAll('pre code');
@@ -103,13 +113,17 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   }, [editor, content]);
 
   if (!editor) {
-    return null;
+    return (
+      <div className="border rounded-lg shadow-sm bg-background border-blue-200 min-h-[400px] flex items-center justify-center">
+        <div className="text-muted-foreground">Loading editor...</div>
+      </div>
+    );
   }
 
   return (
     <div className="border rounded-lg shadow-sm bg-background relative border-blue-200">
-      <EditorToolbar editor={editor} />
-      {editor && <EditorBubbleMenu editor={editor} />}
+      {editable && <EditorToolbar editor={editor} />}
+      {editor && editable && <EditorBubbleMenu editor={editor} />}
       <div className="p-6">
         <EditorContent 
           editor={editor} 
@@ -133,6 +147,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         .ProseMirror p {
           word-wrap: break-word !important;
           overflow-wrap: break-word !important;
+        }
+        .ProseMirror .is-editor-empty:first-child::before {
+          color: #9ca3af;
+          content: attr(data-placeholder);
+          float: left;
+          height: 0;
+          pointer-events: none;
         }
       `}</style>
     </div>
