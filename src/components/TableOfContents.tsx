@@ -1,118 +1,175 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronUp, List } from 'lucide-react';
+import { ChevronDown, ChevronUp, List, Eye } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
-interface TocItem {
+interface TOCItem {
   id: string;
   text: string;
   level: number;
-  element?: Element;
 }
 
 interface TableOfContentsProps {
   content: string;
   className?: string;
-  defaultOpen?: boolean;
 }
 
-const TableOfContents: React.FC<TableOfContentsProps> = ({ 
-  content, 
-  className = '', 
-  defaultOpen = true 
-}) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+const TableOfContents: React.FC<TableOfContentsProps> = ({ content, className = "" }) => {
+  const [tocItems, setTocItems] = useState<TOCItem[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>('');
+  const isMobile = useIsMobile();
 
-  const generateTableOfContents = (): TocItem[] => {
-    if (!content) return [];
-    
-    try {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(content, 'text/html');
-      const headings = doc.querySelectorAll('h1, h2, h3, h4, h5, h6');
-      
-      return Array.from(headings).map((heading, index) => ({
-        id: `heading-${index}`,
-        text: heading.textContent?.trim() || '',
-        level: parseInt(heading.tagName[1]),
-        element: heading
-      })).filter(item => item.text.length > 0);
-    } catch (error) {
-      console.error('Error generating table of contents:', error);
-      return [];
+  // Set initial state based on screen size
+  useEffect(() => {
+    setIsOpen(!isMobile);
+  }, [isMobile]);
+
+  // Extract headings from content
+  useEffect(() => {
+    if (!content) {
+      setTocItems([]);
+      return;
     }
-  };
 
-  const tableOfContents = generateTableOfContents();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(content, 'text/html');
+    const headings = doc.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    
+    const items: TOCItem[] = Array.from(headings).map((heading, index) => ({
+      id: `heading-${index}`,
+      text: heading.textContent || '',
+      level: parseInt(heading.tagName.substring(1), 10)
+    }));
+    
+    setTocItems(items);
+  }, [content]);
 
-  const scrollToHeading = (level: number, text: string) => {
-    // Find the actual heading element in the document
-    const headings = document.querySelectorAll(`h${level}`);
-    const targetHeading = Array.from(headings).find(h => 
-      h.textContent?.trim() === text
-    );
+  // Track active section on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      let current = '';
+      
+      headings.forEach((heading) => {
+        const rect = heading.getBoundingClientRect();
+        if (rect.top <= 100 && rect.bottom >= 0) {
+          current = heading.textContent || '';
+        }
+      });
+      
+      setActiveSection(current);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToHeading = (text: string) => {
+    const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    const targetHeading = Array.from(headings).find(h => h.textContent === text);
     
     if (targetHeading) {
       targetHeading.scrollIntoView({ 
-        behavior: 'smooth',
+        behavior: 'smooth', 
         block: 'start',
         inline: 'nearest'
       });
+      
+      // Close mobile TOC after navigation
+      if (isMobile) {
+        setIsOpen(false);
+      }
     }
   };
 
-  if (tableOfContents.length === 0) {
+  if (tocItems.length === 0) {
     return null;
   }
 
   return (
-    <Card className={`${className}`}>
+    <div className={`${className}`}>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CollapsibleTrigger asChild>
-          <CardHeader className="cursor-pointer hover:bg-gray-50 transition-colors pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-medium text-blue-600 flex items-center">
-                <List className="mr-2 h-4 w-4" />
-                Table of Contents
-              </CardTitle>
-              {isOpen ? (
-                <ChevronUp className="h-4 w-4 text-gray-500" />
-              ) : (
-                <ChevronDown className="h-4 w-4 text-gray-500" />
-              )}
-            </div>
-          </CardHeader>
-        </CollapsibleTrigger>
+        {/* Mobile Toggle Button */}
+        {isMobile && (
+          <CollapsibleTrigger asChild>
+            <Button 
+              variant="outline" 
+              className="w-full mb-4 bg-white shadow-sm border-blue-200 hover:bg-blue-50 text-blue-700"
+            >
+              <List className="mr-2 h-4 w-4" />
+              Table of Contents
+              {isOpen ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
+            </Button>
+          </CollapsibleTrigger>
+        )}
         
         <CollapsibleContent>
-          <CardContent className="pt-0">
-            <nav className="space-y-1 max-h-96 overflow-y-auto">
-              {tableOfContents.map((item, index) => (
-                <Button
-                  key={`${item.id}-${index}`}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => scrollToHeading(item.level, item.text)}
-                  className={`w-full justify-start text-left h-auto py-2 px-2 hover:bg-blue-50 hover:text-blue-700 transition-colors ${
-                    item.level === 1 ? 'font-medium text-gray-900 pl-2' :
-                    item.level === 2 ? 'text-gray-700 pl-4' :
-                    item.level === 3 ? 'text-gray-600 pl-6' :
-                    item.level === 4 ? 'text-gray-500 pl-8' :
-                    'text-gray-400 pl-10'
-                  }`}
-                >
-                  <span className="text-xs block truncate leading-relaxed">
-                    {item.text}
+          <Card className="sticky top-6 bg-white/95 backdrop-blur-sm shadow-xl border-blue-200 overflow-hidden">
+            <CardHeader className="pb-3 bg-gradient-to-r from-blue-600 to-teal-600 text-white">
+              <CardTitle className="text-sm font-medium flex items-center">
+                <Eye className="mr-2 h-4 w-4" />
+                Contents
+                {!isMobile && (
+                  <span className="ml-auto text-xs opacity-75">
+                    {tocItems.length} sections
                   </span>
-                </Button>
-              ))}
-            </nav>
-          </CardContent>
+                )}
+              </CardTitle>
+            </CardHeader>
+            
+            <CardContent className="p-0">
+              <div className="max-h-96 overflow-y-auto">
+                <nav className="p-4 space-y-1">
+                  {tocItems.map((item, index) => {
+                    const isActive = activeSection === item.text;
+                    const indentLevel = Math.max(0, item.level - 1);
+                    
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => scrollToHeading(item.text)}
+                        className={`
+                          block text-left w-full rounded-lg p-3 transition-all duration-200 hover:bg-blue-50 group
+                          ${isActive ? 'bg-blue-100 border-l-4 border-blue-500 text-blue-900 font-medium' : 'hover:text-blue-700'}
+                          ${item.level === 1 ? 'font-semibold text-blue-900 text-base' :
+                            item.level === 2 ? 'font-medium text-blue-800 text-sm' :
+                            item.level === 3 ? 'text-blue-700 text-sm' :
+                            'text-blue-600 text-xs'}
+                        `}
+                        style={{ paddingLeft: `${0.75 + indentLevel * 0.75}rem` }}
+                      >
+                        <div className="flex items-center">
+                          {item.level > 1 && (
+                            <span className="mr-2 text-blue-400 opacity-60">
+                              {'·'.repeat(Math.min(3, item.level - 1))}
+                            </span>
+                          )}
+                          <span className="truncate group-hover:text-blue-800 transition-colors">
+                            {item.text}
+                          </span>
+                          {isActive && (
+                            <span className="ml-auto">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </nav>
+              </div>
+              
+              {/* Bottom gradient fade */}
+              <div className="h-4 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none"></div>
+            </CardContent>
+          </Card>
         </CollapsibleContent>
       </Collapsible>
-    </Card>
+    </div>
   );
 };
 

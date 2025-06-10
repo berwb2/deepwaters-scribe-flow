@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import RichTextEditor from '@/components/RichTextEditor';
+import DocumentRenderer from '@/components/DocumentRenderer';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import { getDocument, updateDocument, callGrandStrategist, getAISession, createAISession, updateAISession } from '@/lib/api';
 import { DOCUMENT_TYPES } from '@/types/documentTypes';
-import { ArrowLeft, Edit, Calendar, Clock, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Edit, Calendar, Clock, MessageSquare, ChevronDown, ChevronUp, Eye } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -143,7 +144,7 @@ const ViewDocument = () => {
     
     const parser = new DOMParser();
     const doc = parser.parseFromString(content, 'text/html');
-    const headings = doc.querySelectorAll('h1, h2, h3');
+    const headings = doc.querySelectorAll('h1, h2, h3, h4, h5, h6');
     
     return Array.from(headings).map((heading, index) => ({
       id: `heading-${index}`,
@@ -153,19 +154,27 @@ const ViewDocument = () => {
     }));
   };
 
+  const scrollToHeading = (text: string) => {
+    const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    const targetHeading = Array.from(headings).find(h => h.textContent === text);
+    if (targetHeading) {
+      targetHeading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   const tableOfContents = generateTableOfContents();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-50">
         <Navbar />
         <div className="flex">
           {!isMobile && <Sidebar />}
           <main className="flex-1 p-6">
             <div className="max-w-4xl mx-auto">
               <div className="animate-pulse">
-                <div className="h-8 bg-gray-300 rounded mb-4"></div>
-                <div className="h-64 bg-gray-300 rounded"></div>
+                <div className="h-8 bg-blue-200 rounded mb-4"></div>
+                <div className="h-64 bg-blue-100 rounded"></div>
               </div>
             </div>
           </main>
@@ -176,19 +185,22 @@ const ViewDocument = () => {
 
   if (!document) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-50">
         <Navbar />
         <div className="flex">
           {!isMobile && <Sidebar />}
           <main className="flex-1 p-6">
-            <div className="max-w-4xl mx-auto text-center">
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">Document not found</h1>
-              <Button asChild>
-                <Link to="/documents">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Documents
-                </Link>
-              </Button>
+            <div className="max-w-4xl mx-auto text-center py-12">
+              <div className="bg-white rounded-xl p-8 shadow-lg">
+                <h1 className="text-2xl font-bold text-gray-900 mb-4">Document not found</h1>
+                <p className="text-gray-600 mb-6">The document you're looking for doesn't exist or has been removed.</p>
+                <Button asChild className="bg-blue-600 hover:bg-blue-700">
+                  <Link to="/documents">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Documents
+                  </Link>
+                </Button>
+              </div>
             </div>
           </main>
         </div>
@@ -200,17 +212,17 @@ const ViewDocument = () => {
   const wordCount = content.replace(/<[^>]*>/g, '').split(/\s+/).filter(word => word.length > 0).length;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-50">
       <Navbar />
       
       <div className="flex">
         {!isMobile && <Sidebar />}
         
-        <main className={`flex-1 ${isMobile ? 'p-4' : 'p-6'}`}>
+        <main className={`flex-1 ${isMobile ? 'p-2' : 'p-6'}`}>
           <div className="max-w-7xl mx-auto">
             {/* Header */}
             <div className="mb-6">
-              <Button variant="ghost" asChild className="mb-4">
+              <Button variant="ghost" asChild className="mb-4 text-blue-600 hover:text-blue-800">
                 <Link to="/documents">
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to Documents
@@ -218,35 +230,36 @@ const ViewDocument = () => {
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Table of Contents - Collapsible on mobile */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Table of Contents - Left Sidebar */}
               {tableOfContents.length > 0 && (
-                <div className="lg:col-span-1">
+                <div className="lg:col-span-3">
                   <Collapsible open={tocOpen} onOpenChange={setTocOpen}>
                     <CollapsibleTrigger asChild>
-                      <Button variant="outline" className="w-full mb-4 lg:hidden">
+                      <Button variant="outline" className="w-full mb-4 lg:hidden bg-white shadow-sm">
                         Table of Contents
                         {tocOpen ? <ChevronUp className="ml-2 h-4 w-4" /> : <ChevronDown className="ml-2 h-4 w-4" />}
                       </Button>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
-                      <Card className="sticky top-6">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-sm font-medium text-blue-600">Table of Contents</CardTitle>
+                      <Card className="sticky top-6 bg-white/90 backdrop-blur-sm shadow-lg border-blue-100">
+                        <CardHeader className="pb-3 bg-gradient-to-r from-blue-600 to-teal-600 text-white rounded-t-lg">
+                          <CardTitle className="text-sm font-medium flex items-center">
+                            <Eye className="mr-2 h-4 w-4" />
+                            Contents
+                          </CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-0">
-                          <nav className="space-y-2">
-                            {tableOfContents.map((item) => (
+                        <CardContent className="pt-0 max-h-96 overflow-y-auto">
+                          <nav className="space-y-2 py-4">
+                            {tableOfContents.map((item, index) => (
                               <button
-                                key={item.id}
-                                onClick={() => {
-                                  const element = document.querySelector(`h${item.level}`);
-                                  element?.scrollIntoView({ behavior: 'smooth' });
-                                }}
-                                className={`block text-left text-sm hover:text-blue-600 transition-colors w-full ${
-                                  item.level === 1 ? 'font-medium text-gray-900' :
-                                  item.level === 2 ? 'ml-2 text-gray-700' :
-                                  'ml-4 text-gray-600'
+                                key={index}
+                                onClick={() => scrollToHeading(item.text)}
+                                className={`block text-left text-sm hover:text-blue-600 transition-all duration-200 w-full rounded-md p-2 hover:bg-blue-50 ${
+                                  item.level === 1 ? 'font-semibold text-blue-900 text-base' :
+                                  item.level === 2 ? 'ml-3 font-medium text-blue-800' :
+                                  item.level === 3 ? 'ml-6 text-blue-700' :
+                                  'ml-9 text-blue-600'
                                 }`}
                               >
                                 {item.text}
@@ -261,90 +274,95 @@ const ViewDocument = () => {
               )}
 
               {/* Main Content */}
-              <div className={`${tableOfContents.length > 0 ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
-                <Card className="border-blue-100 shadow-lg">
-                  <CardHeader className="bg-gradient-to-r from-blue-50 to-teal-50">
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            className="text-2xl font-bold bg-transparent border-none outline-none focus:ring-2 focus:ring-blue-500 rounded px-2 py-1 w-full"
-                            placeholder="Document title..."
-                          />
-                        ) : (
-                          <CardTitle className="text-2xl text-blue-800 break-words">
-                            {document.title}
-                          </CardTitle>
-                        )}
+              <div className={`${tableOfContents.length > 0 ? 'lg:col-span-6' : 'lg:col-span-9'}`}>
+                <Card className="border-blue-200 shadow-xl bg-white/95 backdrop-blur-sm">
+                  <CardHeader className="bg-gradient-to-r from-blue-600 to-teal-600 text-white">
+                    <div className="flex flex-col space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={title}
+                              onChange={(e) => setTitle(e.target.value)}
+                              className="text-xl sm:text-2xl font-bold bg-white/20 border border-white/30 outline-none focus:ring-2 focus:ring-white/50 rounded-lg px-3 py-2 w-full text-white placeholder-white/70"
+                              placeholder="Document title..."
+                            />
+                          ) : (
+                            <CardTitle className="text-xl sm:text-2xl text-white break-words leading-tight">
+                              {document.title}
+                            </CardTitle>
+                          )}
+                        </div>
                         
-                        <div className="flex flex-wrap items-center gap-2 mt-3">
-                          <Badge variant="outline" className={documentType.color}>
-                            {documentType.name}
-                          </Badge>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => setShowAI(!showAI)}
+                            className="flex-shrink-0 bg-white/20 hover:bg-white/30 text-white border-white/30"
+                          >
+                            <MessageSquare className="mr-2 h-4 w-4" />
+                            {showAI ? 'Hide' : 'Show'} AI
+                          </Button>
                           
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Calendar className="mr-1 h-3 w-3" />
-                            {new Date(document.created_at).toLocaleDateString()}
-                          </div>
-                          
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Clock className="mr-1 h-3 w-3" />
-                            {new Date(document.updated_at).toLocaleTimeString()}
-                          </div>
-                          
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <span>{wordCount} words</span>
-                          </div>
+                          {isEditing ? (
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => {
+                                  setIsEditing(false);
+                                  setContent(document.content || '');
+                                  setTitle(document.title || '');
+                                }}
+                                disabled={isSaving}
+                                className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={handleSave}
+                                disabled={isSaving || !title.trim()}
+                                className="bg-white text-blue-600 hover:bg-white/90"
+                              >
+                                {isSaving ? 'Saving...' : 'Save'}
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={() => setIsEditing(true)}
+                              className="bg-white text-blue-600 hover:bg-white/90 flex-shrink-0"
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </Button>
+                          )}
                         </div>
                       </div>
                       
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowAI(!showAI)}
-                          className="flex-shrink-0"
-                        >
-                          <MessageSquare className="mr-2 h-4 w-4" />
-                          {showAI ? 'Hide' : 'Show'} AI
-                        </Button>
+                      <div className="flex flex-wrap items-center gap-3 text-sm">
+                        <Badge variant="secondary" className={`${documentType.color} bg-white/20 text-white border-white/30`}>
+                          {documentType.name}
+                        </Badge>
                         
-                        {isEditing ? (
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setIsEditing(false);
-                                setContent(document.content || '');
-                                setTitle(document.title || '');
-                              }}
-                              disabled={isSaving}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={handleSave}
-                              disabled={isSaving || !title.trim()}
-                              className="bg-blue-600 hover:bg-blue-700"
-                            >
-                              {isSaving ? 'Saving...' : 'Save'}
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button
-                            size="sm"
-                            onClick={() => setIsEditing(true)}
-                            className="bg-blue-600 hover:bg-blue-700 flex-shrink-0"
-                          >
-                            <Edit className="mr-2 h-4 w-4" />
-                            Edit
-                          </Button>
-                        )}
+                        <div className="flex items-center text-white/90">
+                          <Calendar className="mr-1 h-3 w-3" />
+                          <span className="hidden sm:inline">Created </span>
+                          {new Date(document.created_at).toLocaleDateString()}
+                        </div>
+                        
+                        <div className="flex items-center text-white/90">
+                          <Clock className="mr-1 h-3 w-3" />
+                          <span className="hidden sm:inline">Updated </span>
+                          {new Date(document.updated_at).toLocaleString()}
+                        </div>
+                        
+                        <div className="flex items-center text-white/90">
+                          <span>{wordCount} words</span>
+                        </div>
                       </div>
                     </div>
                   </CardHeader>
@@ -359,16 +377,13 @@ const ViewDocument = () => {
                         />
                       </div>
                     ) : (
-                      <div className="p-8">
-                        <div 
-                          className="prose prose-blue prose-lg max-w-none"
-                          style={{
-                            fontFamily: 'Georgia, serif',
-                            lineHeight: '1.8',
-                            fontSize: '16px',
-                            color: '#374151'
-                          }}
-                          dangerouslySetInnerHTML={{ __html: content || '<p class="text-gray-500 italic">No content available.</p>' }}
+                      <div className="p-2">
+                        <DocumentRenderer 
+                          document={{
+                            ...document,
+                            content: content
+                          }} 
+                          className="min-h-96"
                         />
                       </div>
                     )}
@@ -378,8 +393,8 @@ const ViewDocument = () => {
 
               {/* AI Chat Panel */}
               {showAI && (
-                <div className="lg:col-span-1">
-                  <Card className="sticky top-6 h-[600px] flex flex-col">
+                <div className="lg:col-span-3">
+                  <Card className="sticky top-6 h-[600px] flex flex-col shadow-xl border-purple-200">
                     <CardHeader className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-lg">
                       <CardTitle className="text-lg">Grand Strategist AI</CardTitle>
                       <p className="text-sm opacity-90">Your intelligent writing assistant</p>
@@ -390,8 +405,9 @@ const ViewDocument = () => {
                       <div className="flex-1 overflow-y-auto space-y-3 mb-4">
                         {aiMessages.length === 0 && (
                           <div className="text-center text-gray-500 py-8">
-                            <MessageSquare className="mx-auto h-12 w-12 text-gray-300 mb-3" />
+                            <MessageSquare className="mx-auto h-12 w-12 text-purple-300 mb-3" />
                             <p className="text-sm">Ask me anything about your document!</p>
+                            <p className="text-xs text-gray-400 mt-1">I can help with writing, editing, and analysis</p>
                           </div>
                         )}
                         
@@ -401,10 +417,10 @@ const ViewDocument = () => {
                             className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                           >
                             <div
-                              className={`max-w-[80%] px-3 py-2 rounded-lg text-sm ${
+                              className={`max-w-[85%] px-3 py-2 rounded-lg text-sm shadow-sm ${
                                 message.role === 'user'
                                   ? 'bg-blue-600 text-white'
-                                  : 'bg-gray-100 text-gray-800'
+                                  : 'bg-gray-100 text-gray-800 border'
                               }`}
                             >
                               <div className="whitespace-pre-wrap break-words">{message.content}</div>
@@ -414,11 +430,11 @@ const ViewDocument = () => {
                         
                         {isAiLoading && (
                           <div className="flex justify-start">
-                            <div className="bg-gray-100 rounded-lg px-3 py-2">
+                            <div className="bg-gray-100 rounded-lg px-3 py-2 border">
                               <div className="flex space-x-1">
-                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
+                                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
                               </div>
                             </div>
                           </div>
@@ -434,14 +450,14 @@ const ViewDocument = () => {
                             onChange={(e) => setAiInput(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleAiQuestion()}
                             placeholder="Ask about your document..."
-                            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                             disabled={isAiLoading}
                           />
                           <Button
                             onClick={handleAiQuestion}
                             disabled={!aiInput.trim() || isAiLoading}
                             size="sm"
-                            className="bg-blue-600 hover:bg-blue-700"
+                            className="bg-purple-600 hover:bg-purple-700"
                           >
                             Send
                           </Button>
