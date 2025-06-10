@@ -471,7 +471,7 @@ export const createAISession = async (documentId: string, documentType: 'documen
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  const sessionData = {
+  const sessionData: any = {
     user_id: user.id,
     session_type: documentType,
     chat_history: [],

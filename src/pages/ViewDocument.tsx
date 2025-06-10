@@ -65,7 +65,14 @@ const ViewDocument = () => {
         session = await createAISession(id, 'document');
       }
       setAiSession(session);
-      setAiMessages(session.chat_history || []);
+      
+      // Safely handle chat_history with proper type checking
+      const chatHistory = session.chat_history;
+      if (Array.isArray(chatHistory)) {
+        setAiMessages(chatHistory);
+      } else {
+        setAiMessages([]);
+      }
     } catch (error) {
       console.error('Error initializing AI:', error);
     }
