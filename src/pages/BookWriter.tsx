@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Navbar from '@/components/Navbar';
@@ -12,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { BookOpen, Plus, Edit3, Save, Brain, FileText } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { getCurrentUser, listDocuments } from '@/lib/api';
+import { getCurrentUser, listDocuments, updateDocument } from '@/lib/api';
 
 interface Chapter {
   id: string;
@@ -244,9 +243,9 @@ const BookWriter = () => {
   };
 
   const saveBook = async (book: Book) => {
-    if (!book || !book.id) {
-      console.error('Cannot save book: Invalid book object');
-      toast.error('Cannot save book: Invalid book data');
+    if (!book || !book.id || !user) {
+      console.error('Cannot save book: Invalid book object or user not authenticated');
+      toast.error('Cannot save book: Invalid book data or authentication required');
       return;
     }
 
@@ -254,7 +253,8 @@ const BookWriter = () => {
       console.log('Saving book:', book.id, book.title);
       setIsSaving(true);
 
-      const updateData = {
+      // Use updateDocument function which properly handles versions and security
+      const updateResult = await updateDocument(book.id, {
         title: book.title,
         content: JSON.stringify(book.chapters),
         metadata: {
@@ -263,22 +263,8 @@ const BookWriter = () => {
           subtitle: book.subtitle,
           description: book.description,
           coverImage: book.coverImage
-        },
-        updated_at: new Date().toISOString()
-      };
-
-      console.log('Update data:', updateData);
-
-      const { error } = await supabase
-        .from('documents')
-        .update(updateData)
-        .eq('id', book.id)
-        .eq('user_id', user?.id);
-
-      if (error) {
-        console.error('Supabase error saving book:', error);
-        throw error;
-      }
+        }
+      });
 
       console.log('Successfully saved book');
 
@@ -296,7 +282,6 @@ const BookWriter = () => {
     }
   };
 
-  // Create a mock document for AI context when writing chapters
   const getChapterDocument = () => {
     if (!activeChapter || !activeBook) return undefined;
     
@@ -566,7 +551,6 @@ const BookWriter = () => {
           </div>
         </main>
         
-        {/* AI Assistant Sidebar */}
         {showAISidebar && (
           <AIAssistantSidebar 
             document={getChapterDocument()}

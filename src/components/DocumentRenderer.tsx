@@ -29,10 +29,10 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
     );
   }
 
-  // Process HTML content to enhance formatting with DeepWaters styling
+  // Process HTML content to enhance formatting with DeepWaters blue-themed styling
   let processedContent = document.content as string;
   if (typeof processedContent === 'string') {
-    // Enhanced heading styles with ocean theme
+    // Enhanced heading styles with blue theme
     processedContent = processedContent
       .replace(/<h1([^>]*)>/g, '<h1$1 class="luxury-heading-1">')
       .replace(/<h2([^>]*)>/g, '<h2$1 class="luxury-heading-2">')
@@ -88,7 +88,7 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
         }}
       />
       
-      {/* Luxury Document Styling */}
+      {/* Enhanced Blue-Themed Document Styling */}
       <style>{`
         .luxury-document-content {
           max-width: 900px;
@@ -107,7 +107,7 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
         .luxury-document-content .luxury-heading-1 {
           font-size: 2.5rem;
           font-weight: 700;
-          color: #0f172a;
+          color: #1e40af !important;
           margin: 3rem 0 1.5rem 0;
           padding-bottom: 1rem;
           border-bottom: 3px solid;
@@ -122,7 +122,7 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
         .luxury-document-content .luxury-heading-2 {
           font-size: 2rem;
           font-weight: 600;
-          color: #1e40af;
+          color: #1e40af !important;
           margin: 2.5rem 0 1.25rem 0;
           position: relative;
           letter-spacing: -0.01em;
@@ -143,28 +143,28 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
         .luxury-document-content .luxury-heading-3 {
           font-size: 1.5rem;
           font-weight: 600;
-          color: #1d4ed8;
+          color: #1d4ed8 !important;
           margin: 2rem 0 1rem 0;
         }
         
         .luxury-document-content .luxury-heading-4 {
           font-size: 1.25rem;
           font-weight: 600;
-          color: #2563eb;
+          color: #2563eb !important;
           margin: 1.5rem 0 0.75rem 0;
         }
         
         .luxury-document-content .luxury-heading-5 {
           font-size: 1.125rem;
           font-weight: 600;
-          color: #3b82f6;
+          color: #3b82f6 !important;
           margin: 1.25rem 0 0.5rem 0;
         }
         
         .luxury-document-content .luxury-heading-6 {
           font-size: 1rem;
           font-weight: 600;
-          color: #60a5fa;
+          color: #60a5fa !important;
           margin: 1rem 0 0.5rem 0;
           text-transform: uppercase;
           letter-spacing: 0.05em;
@@ -316,6 +316,14 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
         .luxury-document-content a:hover {
           color: #1d4ed8;
           text-decoration-color: #3b82f6;
+        }
+        
+        /* Blue-themed highlights for important text */
+        .luxury-document-content mark {
+          background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+          color: #1e40af;
+          padding: 0.125rem 0.25rem;
+          border-radius: 0.25rem;
         }
         
         /* Mobile Responsive Adjustments */

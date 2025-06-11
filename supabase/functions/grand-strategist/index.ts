@@ -31,7 +31,18 @@ serve(async (req) => {
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
     if (!openaiApiKey) {
       console.error('OpenAI API key not found in environment variables')
-      throw new Error('OpenAI API key not configured. Please check your environment variables.')
+      return new Response(
+        JSON.stringify({ 
+          error: 'AI service is not configured. Please contact your administrator to set up the OpenAI API key.',
+          success: false,
+          timestamp: new Date().toISOString(),
+          code: 'API_KEY_MISSING'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 503,
+        },
+      )
     }
 
     // Prepare the system message with enhanced context
@@ -83,7 +94,7 @@ Please provide contextual assistance based on this ${contextType} when relevant 
       }
     ]
 
-    console.log('Calling OpenAI API with model: gpt-4.1-2025-04-14')
+    console.log('Calling OpenAI API with model: gpt-4o-mini')
 
     // Call OpenAI API with improved error handling
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -93,7 +104,7 @@ Please provide contextual assistance based on this ${contextType} when relevant 
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-4o-mini',
         messages: messages,
         temperature: 0.7,
         max_tokens: 3000,
@@ -138,7 +149,7 @@ Please provide contextual assistance based on this ${contextType} when relevant 
       JSON.stringify({ 
         response: aiResponse,
         success: true,
-        model: 'gpt-4.1-2025-04-14',
+        model: 'gpt-4o-mini',
         timestamp: new Date().toISOString()
       }),
       {
