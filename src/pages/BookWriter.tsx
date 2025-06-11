@@ -45,6 +45,7 @@ const BookWriter = () => {
   const [newBookTitle, setNewBookTitle] = useState('');
   const [newBookGenre, setNewBookGenre] = useState('Fiction');
   const [showAISidebar, setShowAISidebar] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['currentUser'],
@@ -69,6 +70,7 @@ const BookWriter = () => {
     if (!user) return;
     
     try {
+      console.log('Loading books for user:', user.id);
       const { data, error } = await supabase
         .from('documents')
         .select('*')
@@ -76,10 +78,24 @@ const BookWriter = () => {
         .eq('content_type', 'book')
         .order('updated_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error loading books:', error);
+        throw error;
+      }
+
+      console.log('Loaded books data:', data);
 
       const bookList = data?.map(doc => {
         const metadata = doc.metadata as any || {};
+        let chapters = [];
+        
+        try {
+          chapters = JSON.parse(doc.content || '[]');
+        } catch (e) {
+          console.error('Error parsing chapters:', e);
+          chapters = [];
+        }
+
         return {
           id: doc.id,
           title: doc.title,
@@ -87,8 +103,8 @@ const BookWriter = () => {
           genre: metadata.genre || 'Fiction',
           description: metadata.description,
           coverImage: metadata.coverImage,
-          wordCount: countWords(doc.content),
-          chapters: JSON.parse(doc.content || '[]'),
+          wordCount: countWords(JSON.stringify(chapters)),
+          chapters: chapters,
           status: metadata.status || 'draft',
           createdAt: doc.created_at,
           lastEdited: doc.updated_at,
@@ -97,32 +113,33 @@ const BookWriter = () => {
       }) || [];
 
       setBooks(bookList);
+      console.log('Successfully loaded books:', bookList.length);
     } catch (error) {
       console.error('Error loading books:', error);
+      toast.error('Failed to load books');
     }
   };
 
   const countWords = (text: string) => {
     if (!text) return 0;
-    return text.trim().split(/\s+/).filter(word => word.length > 0).length;
+    return text.replace(/<[^>]*>/g, '').trim().split(/\s+/).filter(word => word.length > 0).length;
   };
 
   const createNewBook = async () => {
-    if (!user || !newBookTitle.trim()) return;
+    if (!user || !newBookTitle.trim()) {
+      toast.error('Please enter a book title');
+      return;
+    }
 
     try {
-      const bookData = {
-        title: newBookTitle,
-        genre: newBookGenre,
-        status: 'draft',
-        chapters: []
-      };
+      console.log('Creating new book:', newBookTitle);
+      setIsSaving(true);
 
       const { data, error } = await supabase
         .from('documents')
         .insert({
           user_id: user.id,
-          title: newBookTitle,
+          title: newBookTitle.trim(),
           content: JSON.stringify([]),
           content_type: 'book',
           metadata: {
@@ -133,11 +150,16 @@ const BookWriter = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error creating book:', error);
+        throw error;
+      }
+
+      console.log('Successfully created book:', data);
 
       const newBook: Book = {
         id: data.id,
-        title: newBookTitle,
+        title: newBookTitle.trim(),
         genre: newBookGenre,
         wordCount: 0,
         chapters: [],
@@ -154,7 +176,9 @@ const BookWriter = () => {
       toast.success('Book created successfully!');
     } catch (error) {
       console.error('Error creating book:', error);
-      toast.error('Failed to create book');
+      toast.error(`Failed to create book: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -219,32 +243,55 @@ const BookWriter = () => {
   };
 
   const saveBook = async (book: Book) => {
+    if (!book || !book.id) {
+      console.error('Cannot save book: Invalid book object');
+      toast.error('Cannot save book: Invalid book data');
+      return;
+    }
+
     try {
+      console.log('Saving book:', book.id, book.title);
+      setIsSaving(true);
+
+      const updateData = {
+        title: book.title,
+        content: JSON.stringify(book.chapters),
+        metadata: {
+          genre: book.genre,
+          status: book.status,
+          subtitle: book.subtitle,
+          description: book.description,
+          coverImage: book.coverImage
+        },
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('Update data:', updateData);
+
       const { error } = await supabase
         .from('documents')
-        .update({
-          title: book.title,
-          content: JSON.stringify(book.chapters),
-          metadata: {
-            genre: book.genre,
-            status: book.status,
-            subtitle: book.subtitle,
-            description: book.description,
-            coverImage: book.coverImage
-          },
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', book.id);
+        .update(updateData)
+        .eq('id', book.id)
+        .eq('user_id', user?.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error saving book:', error);
+        throw error;
+      }
+
+      console.log('Successfully saved book');
 
       // Update books list
       setBooks(prevBooks => 
-        prevBooks.map(b => b.id === book.id ? book : b)
+        prevBooks.map(b => b.id === book.id ? { ...book, lastEdited: new Date().toISOString() } : b)
       );
+
+      toast.success('Book saved successfully!');
     } catch (error) {
       console.error('Error saving book:', error);
-      toast.error('Failed to save book');
+      toast.error(`Failed to save book: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -270,7 +317,6 @@ const BookWriter = () => {
   };
 
   if (!activeBook) {
-    
     return (
       <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
         <Navbar />
@@ -297,6 +343,7 @@ const BookWriter = () => {
                       onChange={(e) => setNewBookTitle(e.target.value)}
                       placeholder="Enter book title"
                       className="border-blue-200"
+                      disabled={isSaving}
                     />
                   </div>
                   <div>
@@ -305,6 +352,7 @@ const BookWriter = () => {
                       value={newBookGenre}
                       onChange={(e) => setNewBookGenre(e.target.value)}
                       className="w-full p-2 border border-blue-200 rounded-md"
+                      disabled={isSaving}
                     >
                       <option value="Fiction">Fiction</option>
                       <option value="Non-Fiction">Non-Fiction</option>
@@ -317,10 +365,18 @@ const BookWriter = () => {
                     </select>
                   </div>
                   <div className="flex gap-2">
-                    <Button onClick={createNewBook} className="bg-blue-500 hover:bg-blue-600">
-                      Create Book
+                    <Button 
+                      onClick={createNewBook} 
+                      className="bg-blue-500 hover:bg-blue-600"
+                      disabled={isSaving || !newBookTitle.trim()}
+                    >
+                      {isSaving ? 'Creating...' : 'Create Book'}
                     </Button>
-                    <Button variant="outline" onClick={() => setIsCreatingBook(false)}>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setIsCreatingBook(false)}
+                      disabled={isSaving}
+                    >
                       Cancel
                     </Button>
                   </div>
@@ -415,6 +471,9 @@ const BookWriter = () => {
                 <span>{activeBook.wordCount.toLocaleString()} words</span>
                 <span>{activeBook.chapters.length} chapters</span>
               </div>
+              {isSaving && (
+                <div className="text-xs text-green-600 mt-1">Saving...</div>
+              )}
             </div>
 
             <div className="p-4">
@@ -526,3 +585,5 @@ const BookWriter = () => {
 };
 
 export default BookWriter;
+
+}

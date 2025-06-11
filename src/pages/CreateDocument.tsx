@@ -8,11 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import RichTextEditor from '@/components/RichTextEditor';
+import DocumentRenderer from '@/components/DocumentRenderer';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import { useDocumentActions } from '@/hooks/use-document-actions';
 import { DOCUMENT_TYPES, DocumentType, getDocumentTypeTemplate } from '@/types/documentTypes';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Eye, Edit } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from '@/components/ui/sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -25,6 +26,7 @@ const CreateDocument = () => {
   const [documentType, setDocumentType] = useState<DocumentType>('markdown');
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { createDocumentWithSound } = useDocumentActions();
@@ -144,17 +146,61 @@ const CreateDocument = () => {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label htmlFor="content" className="text-blue-700">Document Content</Label>
-                      <div className="text-sm text-muted-foreground">
-                        {wordCount} words
+                      <div className="flex items-center gap-4">
+                        <div className="text-sm text-muted-foreground">
+                          {wordCount} words
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant={!previewMode ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setPreviewMode(false)}
+                            className="flex items-center gap-2"
+                          >
+                            <Edit className="h-4 w-4" />
+                            Edit
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={previewMode ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setPreviewMode(true)}
+                            className="flex items-center gap-2"
+                          >
+                            <Eye className="h-4 w-4" />
+                            Preview
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                    <div className="border rounded-md border-blue-200">
-                      <RichTextEditor 
-                        content={content} 
-                        onChange={setContent} 
-                        placeholder="Start writing your document content here..." 
-                      />
-                    </div>
+                    
+                    {previewMode ? (
+                      <div className="border rounded-xl shadow-lg bg-white border-blue-200 overflow-hidden">
+                        <DocumentRenderer 
+                          document={{
+                            id: 'preview',
+                            title: title || 'Document Preview',
+                            content: content,
+                            content_type: documentType,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString(),
+                            user_id: '',
+                            is_template: false,
+                            metadata: {}
+                          }} 
+                          className="min-h-96"
+                        />
+                      </div>
+                    ) : (
+                      <div className="border rounded-md border-blue-200">
+                        <RichTextEditor 
+                          content={content} 
+                          onChange={setContent} 
+                          placeholder="Start writing your document content here..." 
+                        />
+                      </div>
+                    )}
                   </div>
                 </CardContent>
 

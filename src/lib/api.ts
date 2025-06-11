@@ -116,7 +116,7 @@ export const updateUserProfile = async (updates: { display_name?: string }) => {
   return data;
 };
 
-// Folder Management Functions - keep existing code the same
+// Folder Management Functions
 
 export interface FolderCreationData {
   name: string;
@@ -152,8 +152,6 @@ export const createFolder = async (folderData: FolderCreationData) => {
 
   return data;
 };
-
-// ... keep existing code (folder management functions) the same
 
 export const listFolders = async () => {
   const { data: { user } } = await supabase.auth.getUser();
@@ -207,8 +205,6 @@ export const listFolders = async () => {
 
   return { folders };
 };
-
-// ... keep existing code (other folder functions) the same
 
 export const getFolder = async (folderId: string) => {
   const { data: { user } } = await supabase.auth.getUser();
@@ -275,8 +271,6 @@ export const deleteFolder = async (folderId: string) => {
 
   return { success: true };
 };
-
-// ... keep existing code (folder-document relationships) the same
 
 export const addDocumentToFolder = async (folderId: string, documentId: string) => {
   const { data: { user } } = await supabase.auth.getUser();
@@ -442,27 +436,88 @@ export const getDocumentTags = async (documentId: string) => {
   return data || [];
 };
 
-// Grand Strategist API call - ENHANCED VERSION
-export const callGrandStrategist = async (prompt: string, documentContext?: { id: string; title: string; content: string; type: 'document' | 'chapter' }) => {
+// Grand Strategist API call - ENHANCED VERSION with better error handling
+export const callGrandStrategist = async (prompt: string, documentContext?: { id: string; title: string; content: string; type: 'document' | 'chapter'; metadata?: any }) => {
   try {
-    console.log('Calling Grand Strategist with context:', documentContext ? 'Yes' : 'No');
+    console.log('Calling Grand Strategist with:', {
+      promptLength: prompt?.length || 0,
+      hasContext: !!documentContext,
+      contextType: documentContext?.type,
+      contextTitle: documentContext?.title
+    });
+
+    // Validate input
+    if (!prompt || prompt.trim().length === 0) {
+      throw new Error('Please provide a question or prompt for the AI assistant.');
+    }
+
+    if (prompt.length > 4000) {
+      throw new Error('Your message is too long. Please keep it under 4000 characters.');
+    }
+
+    // Prepare context with proper structure
+    let contextToSend = documentContext;
+    if (documentContext && documentContext.content) {
+      // Limit content size to prevent API issues
+      const maxContentLength = 8000;
+      if (documentContext.content.length > maxContentLength) {
+        contextToSend = {
+          ...documentContext,
+          content: documentContext.content.substring(0, maxContentLength) + '\n...(content truncated for processing)'
+        };
+      }
+    }
     
     const { data, error } = await supabase.functions.invoke('grand-strategist', {
       body: { 
-        prompt,
-        documentContext
+        prompt: prompt.trim(),
+        documentContext: contextToSend
       }
     });
 
     if (error) {
-      console.error('Error calling Grand Strategist:', error);
-      throw error;
+      console.error('Supabase function error:', error);
+      
+      // Provide user-friendly error messages
+      if (error.message?.includes('not found')) {
+        throw new Error('AI service is temporarily unavailable. Please try again in a moment.');
+      } else if (error.message?.includes('timeout')) {
+        throw new Error('Request timed out. Please try again with a shorter message.');
+      } else if (error.message?.includes('API key')) {
+        throw new Error('AI service configuration error. Please contact support.');
+      } else {
+        throw new Error(`AI service error: ${error.message || 'Unknown error'}`);
+      }
     }
 
+    if (!data) {
+      throw new Error('No response received from AI service. Please try again.');
+    }
+
+    if (!data.success) {
+      throw new Error(data.error || 'AI service returned an error. Please try again.');
+    }
+
+    if (!data.response) {
+      throw new Error('Empty response from AI service. Please try again.');
+    }
+
+    console.log('Grand Strategist response received successfully');
     return data;
+
   } catch (error) {
     console.error('Error in Grand Strategist API call:', error);
-    throw error;
+    
+    // Re-throw with user-friendly message if it's not already user-friendly
+    if (error.message && (
+      error.message.includes('AI service') || 
+      error.message.includes('Please') ||
+      error.message.includes('configuration')
+    )) {
+      throw error;
+    } else {
+      throw new Error('Unable to connect to AI assistant. Please check your connection and try again.');
+    }
   }
 };
 

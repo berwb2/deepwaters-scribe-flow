@@ -18,38 +18,57 @@ serve(async (req) => {
 
     console.log('Grand Strategist called with:', { 
       promptLength: prompt?.length || 0, 
-      hasContext: !!documentContext 
+      hasContext: !!documentContext,
+      documentType: documentContext?.type || 'unknown'
     })
+
+    // Validate input
+    if (!prompt || prompt.trim().length === 0) {
+      throw new Error('Prompt is required and cannot be empty')
+    }
 
     // Get OpenAI API configuration from environment
     const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
     if (!openaiApiKey) {
-      throw new Error('OpenAI API key not configured')
+      console.error('OpenAI API key not found in environment variables')
+      throw new Error('OpenAI API key not configured. Please check your environment variables.')
     }
 
-    // Prepare the system message with context
+    // Prepare the system message with enhanced context
     let systemMessage = `You are the Grand Strategist, an expert AI writing assistant with deep knowledge of literature, storytelling, and writing craft. You provide intelligent, contextual assistance to help writers improve their work.
 
 Your capabilities include:
-- Analyzing writing style and structure
-- Providing constructive feedback and suggestions
-- Helping with plot development and character creation
-- Offering grammar and style improvements
-- Assisting with research and fact-checking
-- Providing writing techniques and best practices
+- Analyzing writing style and structure with detailed feedback
+- Providing constructive criticism and actionable suggestions
+- Helping with plot development, character creation, and world-building
+- Offering grammar, style, and flow improvements
+- Assisting with research, fact-checking, and historical accuracy
+- Providing advanced writing techniques and best practices
+- Helping with pacing, tension, and narrative structure
+- Offering genre-specific advice and conventions
 
-Always be helpful, encouraging, and specific in your responses. Focus on actionable advice that will help the writer improve their work.`
+Always be helpful, encouraging, and specific in your responses. Focus on actionable advice that will help the writer improve their work. When analyzing content, be thorough but constructive.`
 
-    // Add document context if available
+    // Add enhanced document context if available
     if (documentContext) {
+      const contextType = documentContext.type === 'chapter' ? 'book chapter' : 'document'
+      const contentPreview = documentContext.content?.substring(0, 2000) || 'No content available'
+      
       systemMessage += `
 
-CURRENT DOCUMENT CONTEXT:
+CURRENT ${contextType.toUpperCase()} CONTEXT:
 Title: ${documentContext.title}
 Type: ${documentContext.type}
-Content Preview: ${documentContext.content?.substring(0, 1500) || 'No content available'}${documentContext.content?.length > 1500 ? '...' : ''}
+${documentContext.type === 'chapter' ? `Book: ${documentContext.metadata?.bookTitle || 'Unknown'}
+Genre: ${documentContext.metadata?.bookGenre || 'Unknown'}
+Chapter Order: ${documentContext.metadata?.chapterOrder || 'Unknown'}` : ''}
 
-Please provide contextual assistance based on this document when relevant to the user's question.`
+Content Preview (first 2000 characters):
+${contentPreview}${documentContext.content?.length > 2000 ? '\n...(content continues)' : ''}
+
+Word Count: ${documentContext.content?.split(' ').length || 0} words
+
+Please provide contextual assistance based on this ${contextType} when relevant to the user's question. Consider the content, style, genre, and structure when providing advice.`
     }
 
     // Prepare messages for OpenAI
@@ -64,9 +83,9 @@ Please provide contextual assistance based on this document when relevant to the
       }
     ]
 
-    console.log('Calling OpenAI API...')
+    console.log('Calling OpenAI API with model: gpt-4.1-2025-04-14')
 
-    // Call OpenAI API
+    // Call OpenAI API with improved error handling
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -74,10 +93,10 @@ Please provide contextual assistance based on this document when relevant to the
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: 'gpt-4.1-2025-04-14',
         messages: messages,
         temperature: 0.7,
-        max_tokens: 2000,
+        max_tokens: 3000,
         top_p: 1,
         frequency_penalty: 0,
         presence_penalty: 0
@@ -86,22 +105,41 @@ Please provide contextual assistance based on this document when relevant to the
 
     if (!response.ok) {
       const errorData = await response.text()
-      console.error('OpenAI API error:', response.status, errorData)
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`)
+      console.error('OpenAI API error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorData
+      })
+      
+      // Provide more specific error messages
+      if (response.status === 401) {
+        throw new Error('OpenAI API authentication failed. Please check your API key.')
+      } else if (response.status === 429) {
+        throw new Error('OpenAI API rate limit exceeded. Please try again in a moment.')
+      } else if (response.status === 500) {
+        throw new Error('OpenAI API server error. Please try again later.')
+      } else {
+        throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`)
+      }
     }
 
     const data = await response.json()
     console.log('OpenAI response received successfully')
 
-    const aiResponse = data.choices[0]?.message?.content
+    const aiResponse = data.choices?.[0]?.message?.content
     if (!aiResponse) {
-      throw new Error('No response from OpenAI')
+      console.error('No response content from OpenAI:', data)
+      throw new Error('No response received from AI. Please try again.')
     }
+
+    console.log('AI response length:', aiResponse.length)
 
     return new Response(
       JSON.stringify({ 
         response: aiResponse,
-        success: true 
+        success: true,
+        model: 'gpt-4.1-2025-04-14',
+        timestamp: new Date().toISOString()
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -110,12 +148,17 @@ Please provide contextual assistance based on this document when relevant to the
     )
 
   } catch (error) {
-    console.error('Error in grand-strategist function:', error)
+    console.error('Error in grand-strategist function:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    })
     
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'An unexpected error occurred',
-        success: false 
+        error: error.message || 'An unexpected error occurred while processing your request',
+        success: false,
+        timestamp: new Date().toISOString()
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
