@@ -89,7 +89,7 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
       />
       
       {/* Luxury Document Styling */}
-      <style jsx>{`
+      <style>{`
         .luxury-document-content {
           max-width: 900px;
           margin: 0 auto;
@@ -104,7 +104,7 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           overflow-wrap: break-word;
         }
         
-        .luxury-document-content :global(.luxury-heading-1) {
+        .luxury-document-content .luxury-heading-1 {
           font-size: 2.5rem;
           font-weight: 700;
           color: #0f172a;
@@ -119,7 +119,7 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           letter-spacing: -0.02em;
         }
         
-        .luxury-document-content :global(.luxury-heading-2) {
+        .luxury-document-content .luxury-heading-2 {
           font-size: 2rem;
           font-weight: 600;
           color: #1e40af;
@@ -128,7 +128,7 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           letter-spacing: -0.01em;
         }
         
-        .luxury-document-content :global(.luxury-heading-2):before {
+        .luxury-document-content .luxury-heading-2:before {
           content: '';
           position: absolute;
           left: -1rem;
@@ -140,28 +140,28 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           border-radius: 2px;
         }
         
-        .luxury-document-content :global(.luxury-heading-3) {
+        .luxury-document-content .luxury-heading-3 {
           font-size: 1.5rem;
           font-weight: 600;
           color: #1d4ed8;
           margin: 2rem 0 1rem 0;
         }
         
-        .luxury-document-content :global(.luxury-heading-4) {
+        .luxury-document-content .luxury-heading-4 {
           font-size: 1.25rem;
           font-weight: 600;
           color: #2563eb;
           margin: 1.5rem 0 0.75rem 0;
         }
         
-        .luxury-document-content :global(.luxury-heading-5) {
+        .luxury-document-content .luxury-heading-5 {
           font-size: 1.125rem;
           font-weight: 600;
           color: #3b82f6;
           margin: 1.25rem 0 0.5rem 0;
         }
         
-        .luxury-document-content :global(.luxury-heading-6) {
+        .luxury-document-content .luxury-heading-6 {
           font-size: 1rem;
           font-weight: 600;
           color: #60a5fa;
@@ -170,7 +170,7 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           letter-spacing: 0.05em;
         }
         
-        .luxury-document-content :global(.luxury-paragraph) {
+        .luxury-document-content .luxury-paragraph {
           margin-bottom: 1.5rem;
           font-size: 1.125rem;
           line-height: 1.8;
@@ -179,17 +179,17 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           text-justify: inter-word;
         }
         
-        .luxury-document-content :global(.luxury-list-bullet) {
+        .luxury-document-content .luxury-list-bullet {
           margin: 1.5rem 0;
           padding-left: 1.5rem;
         }
         
-        .luxury-document-content :global(.luxury-list-numbered) {
+        .luxury-document-content .luxury-list-numbered {
           margin: 1.5rem 0;
           padding-left: 1.5rem;
         }
         
-        .luxury-document-content :global(.luxury-list-item) {
+        .luxury-document-content .luxury-list-item {
           margin-bottom: 0.75rem;
           font-size: 1.125rem;
           line-height: 1.7;
@@ -197,7 +197,7 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           position: relative;
         }
         
-        .luxury-document-content :global(.luxury-list-bullet .luxury-list-item):before {
+        .luxury-document-content .luxury-list-bullet .luxury-list-item:before {
           content: '●';
           color: #3b82f6;
           font-weight: bold;
@@ -205,7 +205,7 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           left: -1.5rem;
         }
         
-        .luxury-document-content :global(.luxury-blockquote) {
+        .luxury-document-content .luxury-blockquote {
           border-left: 4px solid #3b82f6;
           padding: 1.5rem 2rem;
           margin: 2rem 0;
@@ -217,7 +217,7 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           position: relative;
         }
         
-        .luxury-document-content :global(.luxury-blockquote):before {
+        .luxury-document-content .luxury-blockquote:before {
           content: '"';
           font-size: 4rem;
           color: #93c5fd;
@@ -227,7 +227,7 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           font-family: serif;
         }
         
-        .luxury-document-content :global(.luxury-table) {
+        .luxury-document-content .luxury-table {
           width: 100%;
           border-collapse: collapse;
           margin: 2rem 0;
@@ -237,7 +237,7 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
         }
         
-        .luxury-document-content :global(.luxury-table-header) {
+        .luxury-document-content .luxury-table-header {
           background: linear-gradient(135deg, #3b82f6, #1d4ed8);
           color: white;
           padding: 1rem 1.5rem;
@@ -249,7 +249,7 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           hyphens: auto;
         }
         
-        .luxury-document-content :global(.luxury-table-cell) {
+        .luxury-document-content .luxury-table-cell {
           padding: 1rem 1.5rem;
           border-bottom: 1px solid #e2e8f0;
           color: #475569;
@@ -260,11 +260,11 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           vertical-align: top;
         }
         
-        .luxury-document-content :global(.luxury-table tbody tr):hover {
+        .luxury-document-content .luxury-table tbody tr:hover {
           background-color: #f8fafc;
         }
         
-        .luxury-document-content :global(.luxury-inline-code) {
+        .luxury-document-content .luxury-inline-code {
           background: #f1f5f9;
           color: #dc2626;
           padding: 0.25rem 0.5rem;
@@ -274,7 +274,7 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           border: 1px solid #e2e8f0;
         }
         
-        .luxury-document-content :global(.luxury-code-block) {
+        .luxury-document-content .luxury-code-block {
           background: #1e293b;
           color: #e2e8f0;
           padding: 1.5rem;
@@ -287,7 +287,7 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
         
-        .luxury-document-content :global(.luxury-divider) {
+        .luxury-document-content .luxury-divider {
           margin: 3rem 0;
           border: none;
           height: 2px;
@@ -295,17 +295,17 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           border-radius: 1px;
         }
         
-        .luxury-document-content :global(strong) {
+        .luxury-document-content strong {
           font-weight: 700;
           color: #0f172a;
         }
         
-        .luxury-document-content :global(em) {
+        .luxury-document-content em {
           font-style: italic;
           color: #475569;
         }
         
-        .luxury-document-content :global(a) {
+        .luxury-document-content a {
           color: #2563eb;
           text-decoration: underline;
           text-decoration-color: #93c5fd;
@@ -313,7 +313,7 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
           transition: all 0.2s ease;
         }
         
-        .luxury-document-content :global(a):hover {
+        .luxury-document-content a:hover {
           color: #1d4ed8;
           text-decoration-color: #3b82f6;
         }
@@ -325,27 +325,27 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
             margin: 0 0.5rem;
           }
           
-          .luxury-document-content :global(.luxury-heading-1) {
+          .luxury-document-content .luxury-heading-1 {
             font-size: 2rem;
             margin: 2rem 0 1rem 0;
           }
           
-          .luxury-document-content :global(.luxury-heading-2) {
+          .luxury-document-content .luxury-heading-2 {
             font-size: 1.5rem;
             margin: 1.5rem 0 0.75rem 0;
           }
           
-          .luxury-document-content :global(.luxury-paragraph) {
+          .luxury-document-content .luxury-paragraph {
             font-size: 1rem;
             text-align: left;
           }
           
-          .luxury-document-content :global(.luxury-table) {
+          .luxury-document-content .luxury-table {
             font-size: 0.875rem;
           }
           
-          .luxury-document-content :global(.luxury-table-header),
-          .luxury-document-content :global(.luxury-table-cell) {
+          .luxury-document-content .luxury-table-header,
+          .luxury-document-content .luxury-table-cell {
             padding: 0.75rem;
           }
         }

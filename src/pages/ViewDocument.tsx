@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -156,9 +155,14 @@ const ViewDocument = () => {
 
   const scrollToHeading = (text: string) => {
     const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
-    const targetHeading = Array.from(headings).find(h => h.textContent === text);
+    const targetHeading = Array.from(headings).find(h => {
+      const element = h as HTMLElement;
+      return element.textContent === text;
+    });
+    
     if (targetHeading) {
-      targetHeading.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const element = targetHeading as HTMLElement;
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
