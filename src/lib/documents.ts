@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export const listDocuments = async (
@@ -15,37 +16,43 @@ export const listDocuments = async (
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  // Build query using simple approach to avoid type complexity
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  // Start with base query
-  let queryBuilder = supabase
-    .from('documents')
-    .select('*', { count: 'exact' })
-    .eq('user_id', user.id);
+  // Build query using explicit query construction to avoid type complexity
+  let query = supabase.from('documents').select('*', { count: 'exact' });
+  
+  // Apply base filter
+  query = query.eq('user_id', user.id);
 
-  // Apply filters
+  // Apply content type filter
   if (filters.contentType && filters.contentType !== 'all') {
-    queryBuilder = queryBuilder.eq('content_type', filters.contentType);
+    query = query.eq('content_type', filters.contentType);
   }
 
+  // Apply search filter
   if (filters.search) {
-    queryBuilder = queryBuilder.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
+    query = query.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
   }
 
+  // Apply folder filter
   if (filters.folder_id) {
-    queryBuilder = queryBuilder.eq('folder_id', filters.folder_id);
+    query = query.eq('folder_id', filters.folder_id);
   }
 
+  // Apply status filter
   if (filters.status) {
-    queryBuilder = queryBuilder.eq('status', filters.status);
+    query = query.eq('status', filters.status);
   }
 
-  // Apply sorting and pagination in final step
-  const { data, error, count } = await queryBuilder
-    .order(sortBy.field, { ascending: sortBy.direction === 'asc' })
-    .range(from, to);
+  // Apply sorting
+  query = query.order(sortBy.field, { ascending: sortBy.direction === 'asc' });
+  
+  // Apply pagination
+  query = query.range(from, to);
+
+  // Execute query
+  const { data, error, count } = await query;
 
   if (error) {
     console.error('Error fetching documents:', error);
