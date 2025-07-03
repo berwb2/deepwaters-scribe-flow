@@ -16,55 +16,59 @@ export const listDocuments = async (
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  let query = supabase
+  // Start with base query
+  let baseQuery = supabase
     .from('documents')
     .select('*', { count: 'exact' })
     .eq('user_id', user.id);
 
-  // Apply filters
+  // Apply content type filter
   if (filters.contentType && filters.contentType !== 'all') {
-    query = query.eq('content_type', filters.contentType);
+    baseQuery = baseQuery.eq('content_type', filters.contentType);
   }
 
+  // Apply search filter
   if (filters.search) {
-    query = query.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
+    baseQuery = baseQuery.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
   }
 
+  // Apply folder filter
   if (filters.folder_id) {
-    query = query.eq('folder_id', filters.folder_id);
+    baseQuery = baseQuery.eq('folder_id', filters.folder_id);
   }
 
+  // Apply status filter
   if (filters.status) {
-    query = query.eq('status', filters.status);
+    baseQuery = baseQuery.eq('status', filters.status);
   }
 
   // Apply sorting
-  query = query.order(sortBy.field, { ascending: sortBy.direction === 'asc' });
+  const sortedQuery = baseQuery.order(sortBy.field, { ascending: sortBy.direction === 'asc' });
 
   // Apply pagination
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
-  query = query.range(from, to);
+  const paginatedQuery = sortedQuery.range(from, to);
 
-  const result = await query;
-  const { data, error, count } = result;
-
-  if (error) {
-    console.error('Error fetching documents:', error);
-    throw error;
+  // Execute query with explicit type handling
+  const queryResult = await paginatedQuery;
+  
+  if (queryResult.error) {
+    console.error('Error fetching documents:', queryResult.error);
+    throw queryResult.error;
   }
 
-  const totalPages = count ? Math.ceil(count / pageSize) : 0;
+  const totalPages = queryResult.count ? Math.ceil(queryResult.count / pageSize) : 0;
 
   // Add empty tags array to documents for compatibility
-  const documentsWithTags = data?.map(doc => ({
+  const documentsWithTags = queryResult.data?.map(doc => ({
     ...doc,
     tags: [] as string[]
   })) || [];
 
   return { 
     documents: documentsWithTags, 
-    total: count || 0,
+    total: queryResult.count || 0,
     totalPages,
     currentPage: page,
     pageSize
@@ -75,21 +79,19 @@ export const getDocument = async (documentId: string) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  const result = await supabase
+  const queryResult = await supabase
     .from('documents')
     .select('*')
     .eq('id', documentId)
     .eq('user_id', user.id)
     .single();
 
-  const { data, error } = result;
-
-  if (error) {
-    console.error('Error fetching document:', error);
-    throw error;
+  if (queryResult.error) {
+    console.error('Error fetching document:', queryResult.error);
+    throw queryResult.error;
   }
 
-  return { ...data, tags: [] };
+  return { ...queryResult.data, tags: [] };
 };
 
 export const createDocument = async (documentData: {
@@ -105,7 +107,7 @@ export const createDocument = async (documentData: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  const result = await supabase
+  const insertResult = await supabase
     .from('documents')
     .insert({
       user_id: user.id,
@@ -118,14 +120,12 @@ export const createDocument = async (documentData: {
     .select()
     .single();
 
-  const { data, error } = result;
-
-  if (error) {
-    console.error('Error creating document:', error);
-    throw error;
+  if (insertResult.error) {
+    console.error('Error creating document:', insertResult.error);
+    throw insertResult.error;
   }
 
-  return { ...data, tags: [] };
+  return { ...insertResult.data, tags: [] };
 };
 
 export const updateDocument = async (documentId: string, updates: {
@@ -140,7 +140,7 @@ export const updateDocument = async (documentId: string, updates: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  const result = await supabase
+  const updateResult = await supabase
     .from('documents')
     .update(updates)
     .eq('id', documentId)
@@ -148,29 +148,27 @@ export const updateDocument = async (documentId: string, updates: {
     .select()
     .single();
 
-  const { data, error } = result;
-
-  if (error) {
-    console.error('Error updating document:', error);
-    throw error;
+  if (updateResult.error) {
+    console.error('Error updating document:', updateResult.error);
+    throw updateResult.error;
   }
 
-  return data;
+  return updateResult.data;
 };
 
 export const deleteDocument = async (documentId: string) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  const { error } = await supabase
+  const deleteResult = await supabase
     .from('documents')
     .delete()
     .eq('id', documentId)
     .eq('user_id', user.id);
 
-  if (error) {
-    console.error('Error deleting document:', error);
-    throw error;
+  if (deleteResult.error) {
+    console.error('Error deleting document:', deleteResult.error);
+    throw deleteResult.error;
   }
 
   return { success: true };
@@ -180,21 +178,19 @@ export const searchDocuments = async (query: string) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  const result = await supabase
+  const searchResult = await supabase
     .from('documents')
     .select('id, title, content')
     .eq('user_id', user.id)
     .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
     .limit(10);
 
-  const { data, error } = result;
-
-  if (error) {
-    console.error('Error searching documents:', error);
-    throw error;
+  if (searchResult.error) {
+    console.error('Error searching documents:', searchResult.error);
+    throw searchResult.error;
   }
 
-  return data?.map(doc => ({
+  return searchResult.data?.map(doc => ({
     id: doc.id,
     title: doc.title,
     excerpt: doc.content.substring(0, 150) + '...',
