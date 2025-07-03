@@ -19,40 +19,40 @@ export const listDocuments = async (
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  // Build query using explicit query construction to avoid type complexity
-  let query = supabase.from('documents').select('*', { count: 'exact' });
+  // Build query parts separately to avoid type complexity
+  const baseQuery = supabase.from('documents').select('*', { count: 'exact' });
   
-  // Apply base filter
-  query = query.eq('user_id', user.id);
-
-  // Apply content type filter
+  // Create filter conditions array
+  const conditions: any[] = [{ user_id: user.id }];
+  
   if (filters.contentType && filters.contentType !== 'all') {
-    query = query.eq('content_type', filters.contentType);
+    conditions.push({ content_type: filters.contentType });
   }
-
-  // Apply search filter
-  if (filters.search) {
-    query = query.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
-  }
-
-  // Apply folder filter
-  if (filters.folder_id) {
-    query = query.eq('folder_id', filters.folder_id);
-  }
-
-  // Apply status filter
-  if (filters.status) {
-    query = query.eq('status', filters.status);
-  }
-
-  // Apply sorting
-  query = query.order(sortBy.field, { ascending: sortBy.direction === 'asc' });
   
-  // Apply pagination
-  query = query.range(from, to);
+  if (filters.folder_id) {
+    conditions.push({ folder_id: filters.folder_id });
+  }
+  
+  if (filters.status) {
+    conditions.push({ status: filters.status });
+  }
 
-  // Execute query
-  const { data, error, count } = await query;
+  // Apply all conditions at once
+  let finalQuery = baseQuery;
+  conditions.forEach(condition => {
+    const [key, value] = Object.entries(condition)[0];
+    finalQuery = finalQuery.eq(key, value);
+  });
+
+  // Apply search filter if present
+  if (filters.search) {
+    finalQuery = finalQuery.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
+  }
+
+  // Apply sorting and pagination
+  const { data, error, count } = await finalQuery
+    .order(sortBy.field, { ascending: sortBy.direction === 'asc' })
+    .range(from, to);
 
   if (error) {
     console.error('Error fetching documents:', error);
