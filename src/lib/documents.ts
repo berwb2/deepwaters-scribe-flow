@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export const listDocuments = async (
@@ -19,39 +18,34 @@ export const listDocuments = async (
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  // Use a single query construction to avoid type complexity
-  let queryBuilder = supabase
+  // Build query step by step to avoid type inference issues
+  let query = supabase
     .from('documents')
     .select('*', { count: 'exact' })
     .eq('user_id', user.id);
 
-  // Build where conditions separately and apply them
-  const whereConditions: any = {};
-  
+  // Apply content type filter
   if (filters.contentType && filters.contentType !== 'all') {
-    whereConditions.content_type = filters.contentType;
+    query = query.eq('content_type', filters.contentType);
   }
   
+  // Apply folder filter
   if (filters.folder_id) {
-    whereConditions.folder_id = filters.folder_id;
+    query = query.eq('folder_id', filters.folder_id);
   }
   
+  // Apply status filter
   if (filters.status) {
-    whereConditions.status = filters.status;
+    query = query.eq('status', filters.status);
   }
 
-  // Apply all eq conditions at once
-  for (const [key, value] of Object.entries(whereConditions)) {
-    queryBuilder = queryBuilder.eq(key, value);
-  }
-
-  // Handle search separately with or condition
+  // Apply search filter
   if (filters.search) {
-    queryBuilder = queryBuilder.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
+    query = query.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
   }
 
-  // Execute final query with sorting and pagination
-  const { data, error, count } = await queryBuilder
+  // Execute query with sorting and pagination
+  const { data, error, count } = await query
     .order(sortBy.field, { ascending: sortBy.direction === 'asc' })
     .range(from, to);
 
