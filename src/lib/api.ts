@@ -440,7 +440,7 @@ export const getDocument = async (documentId: string) => {
     throw error;
   }
 
-  return data;
+  return { ...data, tags: [] };
 };
 
 export const createDocument = async (documentData: {
@@ -451,6 +451,7 @@ export const createDocument = async (documentData: {
   tags?: string[];
   status?: string;
   metadata?: any;
+  is_template?: boolean;
 }) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
@@ -462,6 +463,7 @@ export const createDocument = async (documentData: {
       title: documentData.title,
       content: documentData.content,
       content_type: documentData.content_type,
+      is_template: documentData.is_template || false,
       metadata: documentData.metadata || {}
     })
     .select()
@@ -472,7 +474,7 @@ export const createDocument = async (documentData: {
     throw error;
   }
 
-  return data;
+  return { ...data, tags: [] };
 };
 
 export const updateDocument = async (documentId: string, updates: {
