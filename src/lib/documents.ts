@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export const listDocuments = async (
@@ -19,80 +18,39 @@ export const listDocuments = async (
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  // Build query with all filters at once to avoid type inference issues
-  const baseQuery = supabase
+  // Build the query using a simpler approach to avoid type inference issues
+  let query = supabase
     .from('documents')
     .select('*', { count: 'exact' })
     .eq('user_id', user.id);
 
-  // Build the filter conditions
-  let finalQuery = baseQuery;
+  // Apply filters using match for simpler type handling
+  const matchConditions: Record<string, any> = {};
 
-  // Apply each filter independently
   if (filters.contentType && filters.contentType !== 'all') {
-    finalQuery = supabase
-      .from('documents')
-      .select('*', { count: 'exact' })
-      .eq('user_id', user.id)
-      .eq('content_type', filters.contentType);
+    matchConditions.content_type = filters.contentType;
   }
   
   if (filters.folder_id) {
-    if (filters.contentType && filters.contentType !== 'all') {
-      finalQuery = supabase
-        .from('documents')
-        .select('*', { count: 'exact' })
-        .eq('user_id', user.id)
-        .eq('content_type', filters.contentType)
-        .eq('folder_id', filters.folder_id);
-    } else {
-      finalQuery = supabase
-        .from('documents')
-        .select('*', { count: 'exact' })
-        .eq('user_id', user.id)
-        .eq('folder_id', filters.folder_id);
-    }
+    matchConditions.folder_id = filters.folder_id;
   }
   
   if (filters.status) {
-    // Rebuild query with all previous filters plus status
-    let statusQuery = supabase
-      .from('documents')
-      .select('*', { count: 'exact' })
-      .eq('user_id', user.id);
-    
-    if (filters.contentType && filters.contentType !== 'all') {
-      statusQuery = statusQuery.eq('content_type', filters.contentType);
-    }
-    if (filters.folder_id) {
-      statusQuery = statusQuery.eq('folder_id', filters.folder_id);
-    }
-    
-    finalQuery = statusQuery.eq('status', filters.status);
+    matchConditions.status = filters.status;
   }
 
+  // Apply all match conditions at once
+  if (Object.keys(matchConditions).length > 0) {
+    query = query.match(matchConditions);
+  }
+
+  // Apply search filter separately using or
   if (filters.search) {
-    // Rebuild query with all previous filters plus search
-    let searchQuery = supabase
-      .from('documents')
-      .select('*', { count: 'exact' })
-      .eq('user_id', user.id);
-    
-    if (filters.contentType && filters.contentType !== 'all') {
-      searchQuery = searchQuery.eq('content_type', filters.contentType);
-    }
-    if (filters.folder_id) {
-      searchQuery = searchQuery.eq('folder_id', filters.folder_id);
-    }
-    if (filters.status) {
-      searchQuery = searchQuery.eq('status', filters.status);
-    }
-    
-    finalQuery = searchQuery.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
+    query = query.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
   }
 
-  // Execute the final query
-  const { data, error, count } = await finalQuery
+  // Execute the query
+  const { data, error, count } = await query
     .order(sortBy.field, { ascending: sortBy.direction === 'asc' })
     .range(from, to);
 
