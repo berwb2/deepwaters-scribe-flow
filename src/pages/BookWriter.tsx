@@ -298,7 +298,8 @@ const BookWriter = () => {
         bookTitle: activeBook.title,
         bookGenre: activeBook.genre,
         chapterOrder: activeChapter.order
-      }
+      },
+      tags: []
     };
   };
 

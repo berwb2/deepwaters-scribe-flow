@@ -62,7 +62,8 @@ const CreateDocument = () => {
         content,
         content_type: documentType,
         is_template: false,
-        metadata: folderId ? { folder_id: folderId } : {}
+        metadata: folderId ? { folder_id: folderId } : {},
+        tags: []
       });
       
       toast.success("Document created successfully!");

@@ -549,9 +549,9 @@ export const searchDocuments = async (query: string) => {
 };
 
 // AI Functions
-export const callGrandStrategist = async (prompt: string, context?: any) => {
+export const callGrandStrategist = async (prompt: string) => {
   const { data, error } = await supabase.functions.invoke('grand-strategist', {
-    body: { prompt, context }
+    body: { prompt }
   });
 
   if (error) {
@@ -562,7 +562,7 @@ export const callGrandStrategist = async (prompt: string, context?: any) => {
   return data;
 };
 
-export const getAISession = async (sessionId: string, sessionType: string) => {
+export const getAISession = async (sessionId: string) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
@@ -581,7 +581,7 @@ export const getAISession = async (sessionId: string, sessionType: string) => {
   return data;
 };
 
-export const createAISession = async (documentId: string, sessionType: string) => {
+export const createAISession = async (documentId: string) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
@@ -590,7 +590,7 @@ export const createAISession = async (documentId: string, sessionType: string) =
     .insert({
       user_id: user.id,
       document_id: documentId,
-      session_type: sessionType,
+      session_type: 'general',
       chat_history: []
     })
     .select()
