@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Navbar from '@/components/Navbar';
@@ -103,11 +104,11 @@ const Documents = () => {
     setIsCreateDialogOpen(true);
   };
 
-  // Extract unique tags from documents for filtering
+  // Extract unique tags from documents for filtering - handle case where tags might not exist
   const availableTags = Array.from(
     new Set(
       documents
-        .flatMap(doc => doc.tags || [])
+        .flatMap(doc => (doc.tags || []))
         .filter(Boolean)
     )
   ).sort();
@@ -315,7 +316,8 @@ const Documents = () => {
                         document={{
                           ...doc,
                           content_type: doc.content_type as DocType,
-                          updated_at: formatDate(doc.updated_at)
+                          updated_at: formatDate(doc.updated_at),
+                          tags: doc.tags || []
                         }}
                         onUpdate={handleRefresh}
                       />

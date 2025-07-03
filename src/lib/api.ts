@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { DocumentMeta, FolderMeta } from "@/types/documents";
 
@@ -126,7 +127,7 @@ export interface FolderCreationData {
   parent_id?: string | null;
 }
 
-export const createEnhancedFolder = async (folderData: FolderCreationData) => {
+export const createFolder = async (folderData: FolderCreationData) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
@@ -145,14 +146,14 @@ export const createEnhancedFolder = async (folderData: FolderCreationData) => {
     .single();
 
   if (error) {
-    console.error('Error creating enhanced folder:', error);
+    console.error('Error creating folder:', error);
     throw error;
   }
 
   return data;
 };
 
-export const listEnhancedFolders = async () => {
+export const listFolders = async () => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
@@ -163,7 +164,7 @@ export const listEnhancedFolders = async () => {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching enhanced folders:', error);
+    console.error('Error fetching folders:', error);
     throw error;
   }
 
@@ -193,7 +194,7 @@ export const listEnhancedFolders = async () => {
   return { folders };
 };
 
-export const getEnhancedFolder = async (folderId: string) => {
+export const getFolder = async (folderId: string) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
@@ -205,14 +206,14 @@ export const getEnhancedFolder = async (folderId: string) => {
     .single();
 
   if (error) {
-    console.error('Error fetching enhanced folder:', error);
+    console.error('Error fetching folder:', error);
     throw error;
   }
 
   return data;
 };
 
-export const updateEnhancedFolder = async (folderId: string, updates: Partial<FolderCreationData>) => {
+export const updateFolder = async (folderId: string, updates: Partial<FolderCreationData>) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
@@ -225,14 +226,14 @@ export const updateEnhancedFolder = async (folderId: string, updates: Partial<Fo
     .single();
 
   if (error) {
-    console.error('Error updating enhanced folder:', error);
+    console.error('Error updating folder:', error);
     throw error;
   }
 
   return data;
 };
 
-export const deleteEnhancedFolder = async (folderId: string) => {
+export const deleteFolder = async (folderId: string) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
@@ -243,14 +244,14 @@ export const deleteEnhancedFolder = async (folderId: string) => {
     .eq('user_id', user.id);
 
   if (error) {
-    console.error('Error deleting enhanced folder:', error);
+    console.error('Error deleting folder:', error);
     throw error;
   }
 
   return { success: true };
 };
 
-export const addDocumentToEnhancedFolder = async (folderId: string, documentId: string) => {
+export const addDocumentToFolder = async (folderId: string, documentId: string) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
@@ -264,14 +265,14 @@ export const addDocumentToEnhancedFolder = async (folderId: string, documentId: 
     .single();
 
   if (error) {
-    console.error('Error adding document to enhanced folder:', error);
+    console.error('Error adding document to folder:', error);
     throw error;
   }
 
   return data;
 };
 
-export const removeDocumentFromEnhancedFolder = async (folderId: string, documentId: string) => {
+export const removeDocumentFromFolder = async (folderId: string, documentId: string) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
@@ -282,14 +283,14 @@ export const removeDocumentFromEnhancedFolder = async (folderId: string, documen
     .eq('document_id', documentId);
 
   if (error) {
-    console.error('Error removing document from enhanced folder:', error);
+    console.error('Error removing document from folder:', error);
     throw error;
   }
 
   return { success: true };
 };
 
-export const listEnhancedFolderDocuments = async (folderId: string) => {
+export const listFolderDocuments = async (folderId: string) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
@@ -313,7 +314,7 @@ export const listEnhancedFolderDocuments = async (folderId: string) => {
     .eq('folder_id', folderId);
 
   if (error) {
-    console.error('Error fetching enhanced folder documents:', error);
+    console.error('Error fetching folder documents:', error);
     throw error;
   }
 
@@ -394,8 +395,9 @@ export const listDocuments = async (
   };
 };
 
-// Add listFolders alias for compatibility
-export const listFolders = listEnhancedFolders;
+export const listEnhancedFolderDocuments = async (folderId: string) => {
+  return await listFolderDocuments(folderId);
+};
 
 // Document management functions
 export const getAllDocumentsForAI = async () => {
@@ -456,11 +458,7 @@ export const createDocument = async (documentData: {
       title: documentData.title,
       content: documentData.content,
       content_type: documentData.content_type,
-      folder_id: documentData.folder_id || null,
-      tags: documentData.tags || [],
-      status: documentData.status || 'draft',
-      metadata: documentData.metadata || {},
-      organization_id: user.id
+      metadata: documentData.metadata || {}
     })
     .select()
     .single();
@@ -517,6 +515,114 @@ export const deleteDocument = async (documentId: string) => {
   }
 
   return { success: true };
+};
+
+// Search function
+export const searchDocuments = async (query: string) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('documents')
+    .select('id, title, content')
+    .eq('user_id', user.id)
+    .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
+    .limit(10);
+
+  if (error) {
+    console.error('Error searching documents:', error);
+    throw error;
+  }
+
+  return data?.map(doc => ({
+    id: doc.id,
+    title: doc.title,
+    excerpt: doc.content.substring(0, 150) + '...',
+    content_type: 'document'
+  })) || [];
+};
+
+// AI Functions
+export const callGrandStrategist = async (prompt: string) => {
+  const { data, error } = await supabase.functions.invoke('grand-strategist', {
+    body: { prompt }
+  });
+
+  if (error) {
+    console.error('Error calling Grand Strategist:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const getAISession = async (sessionId: string) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('ai_sessions')
+    .select('*')
+    .eq('id', sessionId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching AI session:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const createAISession = async (sessionData: {
+  session_type: string;
+  document_id?: string;
+  chapter_id?: string;
+  assistant_identifier?: string;
+}) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('ai_sessions')
+    .insert({
+      user_id: user.id,
+      ...sessionData
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating AI session:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const updateAISession = async (sessionId: string, updates: {
+  chat_history?: any;
+  context_summary?: string;
+  is_active?: boolean;
+}) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('ai_sessions')
+    .update(updates)
+    .eq('id', sessionId)
+    .eq('user_id', user.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating AI session:', error);
+    throw error;
+  }
+
+  return data;
 };
 
 // Book functions
@@ -736,3 +842,12 @@ export const deleteChapter = async (chapterId: string) => {
 
   return { success: true };
 };
+
+// Export aliases for backward compatibility
+export const createEnhancedFolder = createFolder;
+export const listEnhancedFolders = listFolders;
+export const getEnhancedFolder = getFolder;
+export const updateEnhancedFolder = updateFolder;
+export const deleteEnhancedFolder = deleteFolder;
+export const addDocumentToEnhancedFolder = addDocumentToFolder;
+export const removeDocumentFromEnhancedFolder = removeDocumentFromFolder;
