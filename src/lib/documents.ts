@@ -46,7 +46,8 @@ export const listDocuments = async (
   const to = from + pageSize - 1;
   query = query.range(from, to);
 
-  const { data, error, count } = await query;
+  const result = await query;
+  const { data, error, count } = result;
 
   if (error) {
     console.error('Error fetching documents:', error);
@@ -74,12 +75,14 @@ export const getDocument = async (documentId: string) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  const { data, error } = await supabase
+  const result = await supabase
     .from('documents')
     .select('*')
     .eq('id', documentId)
     .eq('user_id', user.id)
     .single();
+
+  const { data, error } = result;
 
   if (error) {
     console.error('Error fetching document:', error);
@@ -102,7 +105,7 @@ export const createDocument = async (documentData: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  const { data, error } = await supabase
+  const result = await supabase
     .from('documents')
     .insert({
       user_id: user.id,
@@ -114,6 +117,8 @@ export const createDocument = async (documentData: {
     })
     .select()
     .single();
+
+  const { data, error } = result;
 
   if (error) {
     console.error('Error creating document:', error);
@@ -135,13 +140,15 @@ export const updateDocument = async (documentId: string, updates: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  const { data, error } = await supabase
+  const result = await supabase
     .from('documents')
     .update(updates)
     .eq('id', documentId)
     .eq('user_id', user.id)
     .select()
     .single();
+
+  const { data, error } = result;
 
   if (error) {
     console.error('Error updating document:', error);
@@ -173,12 +180,14 @@ export const searchDocuments = async (query: string) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  const { data, error } = await supabase
+  const result = await supabase
     .from('documents')
     .select('id, title, content')
     .eq('user_id', user.id)
     .or(`title.ilike.%${query}%,content.ilike.%${query}%`)
     .limit(10);
+
+  const { data, error } = result;
 
   if (error) {
     console.error('Error searching documents:', error);
