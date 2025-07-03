@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Navbar from '@/components/Navbar';
@@ -67,7 +66,7 @@ const Documents = () => {
   });
 
   const documents = documentsData?.documents || [];
-  const totalDocuments = documentsData?.total || documents.length;
+  const totalDocuments = documentsData?.total || 0;
   const documentTypes = ['all', 'markdown', 'report', 'conversation', 'note', 'plan'];
   const statusOptions = ['all', 'draft', 'review', 'published', 'archived'];
 
