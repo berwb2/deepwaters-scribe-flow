@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export const listDocuments = async (
@@ -16,40 +15,37 @@ export const listDocuments = async (
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  // Use a more explicit approach to avoid deep type instantiation
-  const baseQuery = supabase
+  // Build query using simple approach to avoid type complexity
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  // Start with base query
+  let queryBuilder = supabase
     .from('documents')
-    .select('*', { count: 'exact' });
+    .select('*', { count: 'exact' })
+    .eq('user_id', user.id);
 
-  // Build the query step by step using explicit variables
-  let finalQuery = baseQuery.eq('user_id', user.id);
-
-  // Apply filters conditionally
+  // Apply filters
   if (filters.contentType && filters.contentType !== 'all') {
-    finalQuery = finalQuery.eq('content_type', filters.contentType);
+    queryBuilder = queryBuilder.eq('content_type', filters.contentType);
   }
 
   if (filters.search) {
-    finalQuery = finalQuery.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
+    queryBuilder = queryBuilder.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
   }
 
   if (filters.folder_id) {
-    finalQuery = finalQuery.eq('folder_id', filters.folder_id);
+    queryBuilder = queryBuilder.eq('folder_id', filters.folder_id);
   }
 
   if (filters.status) {
-    finalQuery = finalQuery.eq('status', filters.status);
+    queryBuilder = queryBuilder.eq('status', filters.status);
   }
 
-  // Apply sorting and pagination
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-  
-  finalQuery = finalQuery
+  // Apply sorting and pagination in final step
+  const { data, error, count } = await queryBuilder
     .order(sortBy.field, { ascending: sortBy.direction === 'asc' })
     .range(from, to);
-
-  const { data, error, count } = await finalQuery;
 
   if (error) {
     console.error('Error fetching documents:', error);
