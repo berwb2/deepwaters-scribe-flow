@@ -9,9 +9,9 @@ interface LogoProps {
 
 const Logo = ({ className = '', showText = true, size = 'md' }: LogoProps) => {
   const sizeClasses = {
-    sm: 'h-6 w-6',
-    md: 'h-8 w-8',
-    lg: 'h-10 w-10'
+    sm: 'h-6',
+    md: 'h-8',
+    lg: 'h-10'
   };
 
   const textSizeClasses = {
@@ -22,11 +22,13 @@ const Logo = ({ className = '', showText = true, size = 'md' }: LogoProps) => {
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <div className={`${sizeClasses[size]} bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center shadow-lg flex-shrink-0`}>
-        <span className="text-white font-bold text-sm">🌊</span>
-      </div>
+      <img 
+        src="/lovable-uploads/6f9ad5aa-559c-4f73-9a91-bf2820b07924.png" 
+        alt="DeepWaters Logo" 
+        className={`${sizeClasses[size]} w-auto object-contain`}
+      />
       {showText && (
-        <span className={`font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent ${textSizeClasses[size]} whitespace-nowrap`}>
+        <span className={`font-bold text-blue-800 ${textSizeClasses[size]} whitespace-nowrap`}>
           DeepWaters
         </span>
       )}

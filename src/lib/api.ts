@@ -116,18 +116,325 @@ export const updateUserProfile = async (updates: { display_name?: string }) => {
   return data;
 };
 
-// Folder Management Functions
-
-export interface FolderCreationData {
+// Enhanced Folder Management Functions with enterprise capabilities
+export interface EnhancedFolderCreationData {
   name: string;
   description?: string | null;
   category?: string;
   priority?: string;
   color?: string;
   parent_id?: string | null;
+  organization_id?: string;
 }
 
-export const createFolder = async (folderData: FolderCreationData) => {
+export const createEnhancedFolder = async (folderData: EnhancedFolderCreationData) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('folders')
+    .insert({
+      created_by: user.id,
+      name: folderData.name,
+      description: folderData.description,
+      color: folderData.color,
+      parent_folder_id: folderData.parent_id,
+      organization_id: user.id
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating enhanced folder:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const listEnhancedFolders = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('folders')
+    .select(`
+      id,
+      name,
+      description,
+      color,
+      parent_folder_id,
+      created_at,
+      created_by,
+      organization_id,
+      is_archived
+    `)
+    .eq('created_by', user.id)
+    .eq('is_archived', false)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching enhanced folders:', error);
+    throw error;
+  }
+
+  // Get document counts for each folder
+  const folderIds = data?.map(f => f.id) || [];
+  let documentCounts: Record<string, number> = {};
+  
+  if (folderIds.length > 0) {
+    const { data: countsData, error: countsError } = await supabase
+      .from('documents')
+      .select('folder_id')
+      .in('folder_id', folderIds);
+
+    if (!countsError && countsData) {
+      documentCounts = countsData.reduce((acc, item) => {
+        if (item.folder_id) {
+          acc[item.folder_id] = (acc[item.folder_id] || 0) + 1;
+        }
+        return acc;
+      }, {} as Record<string, number>);
+    }
+  }
+
+  const folders = data?.map(folder => ({
+    ...folder,
+    document_count: documentCounts[folder.id] || 0
+  })) || [];
+
+  return { folders };
+};
+
+export const getEnhancedFolder = async (folderId: string) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('folders')
+    .select('*')
+    .eq('id', folderId)
+    .eq('created_by', user.id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching enhanced folder:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const updateEnhancedFolder = async (folderId: string, updates: Partial<EnhancedFolderCreationData>) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('folders')
+    .update(updates)
+    .eq('id', folderId)
+    .eq('created_by', user.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating enhanced folder:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const deleteEnhancedFolder = async (folderId: string) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { error } = await supabase
+    .from('folders')
+    .delete()
+    .eq('id', folderId)
+    .eq('created_by', user.id);
+
+  if (error) {
+    console.error('Error deleting enhanced folder:', error);
+    throw error;
+  }
+
+  return { success: true };
+};
+
+export const addDocumentToEnhancedFolder = async (folderId: string, documentId: string) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  // Update the document's folder_id directly
+  const { data, error } = await supabase
+    .from('documents')
+    .update({ folder_id: folderId })
+    .eq('id', documentId)
+    .eq('user_id', user.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error adding document to enhanced folder:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const removeDocumentFromEnhancedFolder = async (documentId: string) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('documents')
+    .update({ folder_id: null })
+    .eq('id', documentId)
+    .eq('user_id', user.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error removing document from enhanced folder:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const listEnhancedFolderDocuments = async (folderId: string) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('documents')
+    .select('*')
+    .eq('folder_id', folderId)
+    .eq('user_id', user.id)
+    .order('updated_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching enhanced folder documents:', error);
+    throw error;
+  }
+
+  return { documents: data || [] };
+};
+
+// Enhanced document management functions
+export const listDocuments = async (
+  filters: { 
+    contentType?: string;
+    search?: string;
+    folder_id?: string;
+    tags?: string[];
+    status?: string;
+  } = {},
+  sortBy: { field: string; direction: 'asc' | 'desc' } = { field: 'updated_at', direction: 'desc' },
+  page: number = 1,
+  pageSize: number = 50
+) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  let query = supabase
+    .from('documents')
+    .select('*', { count: 'exact' })
+    .eq('user_id', user.id);
+
+  // Apply filters
+  if (filters.contentType && filters.contentType !== 'all') {
+    query = query.eq('content_type', filters.contentType);
+  }
+
+  if (filters.search) {
+    query = query.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
+  }
+
+  if (filters.folder_id) {
+    query = query.eq('folder_id', filters.folder_id);
+  }
+
+  if (filters.status) {
+    query = query.eq('status', filters.status);
+  }
+
+  if (filters.tags && filters.tags.length > 0) {
+    query = query.overlaps('tags', filters.tags);
+  }
+
+  // Apply sorting
+  query = query.order(sortBy.field, { ascending: sortBy.direction === 'asc' });
+
+  // Apply pagination
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  query = query.range(from, to);
+
+  const { data, error, count } = await query;
+
+  if (error) {
+    console.error('Error fetching documents:', error);
+    throw error;
+  }
+
+  const totalPages = count ? Math.ceil(count / pageSize) : 0;
+
+  return { 
+    documents: data || [], 
+    total: count || 0,
+    totalPages,
+    currentPage: page,
+    pageSize
+  };
+};
+
+export const getUserFolders = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('document_folders')
+    .select('*')
+    .eq('user_id', user.id);
+
+  if (error) {
+    console.error('Error fetching user folders:', error);
+    throw error;
+  }
+
+  return data || [];
+};
+
+export const getFolder = async (folderId: string) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('document_folders')
+    .select('*')
+    .eq('id', folderId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (error) {
+    console.error('Error fetching folder:', error);
+    throw error;
+  }
+
+  return data;
+};
+
+export const createFolder = async (folderData: {
+  name: string;
+  description?: string | null;
+  category?: string;
+  priority?: string;
+  color?: string;
+  parent_id?: string | null;
+}) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
@@ -153,88 +460,14 @@ export const createFolder = async (folderData: FolderCreationData) => {
   return data;
 };
 
-export const listFolders = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('User not authenticated');
-
-  // Get folders with document count
-  const { data: foldersData, error: foldersError } = await supabase
-    .from('document_folders')
-    .select(`
-      id,
-      name,
-      description,
-      color,
-      category,
-      priority,
-      created_at,
-      user_id
-    `)
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  if (foldersError) {
-    console.error('Error fetching folders:', foldersError);
-    throw foldersError;
-  }
-
-  // Get document counts for each folder
-  const folderIds = foldersData?.map(f => f.id) || [];
-  let documentCounts: Record<string, number> = {};
-  
-  if (folderIds.length > 0) {
-    const { data: countsData, error: countsError } = await supabase
-      .from('folder_documents')
-      .select('folder_id')
-      .in('folder_id', folderIds);
-
-    if (!countsError && countsData) {
-      documentCounts = countsData.reduce((acc, item) => {
-        acc[item.folder_id] = (acc[item.folder_id] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-    }
-  }
-
-  // Combine folders with document counts
-  const folders = foldersData?.map(folder => ({
-    ...folder,
-    parent_id: null, // Add default parent_id until column is added
-    document_count: documentCounts[folder.id] || 0
-  })) || [];
-
-  return { folders };
-};
-
-export const getFolder = async (folderId: string) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('User not authenticated');
-
-  const { data, error } = await supabase
-    .from('document_folders')
-    .select(`
-      id,
-      name,
-      description,
-      color,
-      category,
-      priority,
-      created_at,
-      user_id
-    `)
-    .eq('id', folderId)
-    .eq('user_id', user.id)
-    .single();
-
-  if (error) {
-    console.error('Error fetching folder:', error);
-    throw error;
-  }
-
-  return { ...data, parent_id: null }; // Add default parent_id until column is added
-};
-
-export const updateFolder = async (folderId: string, updates: Partial<FolderCreationData>) => {
+export const updateFolder = async (folderId: string, updates: Partial<{
+  name: string;
+  description?: string | null;
+  category?: string;
+  priority?: string;
+  color?: string;
+  parent_id?: string | null;
+}>) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
@@ -600,51 +833,6 @@ export const updateAISession = async (sessionId: string, updates: { chat_history
 };
 
 // Document management functions
-export const listDocuments = async (
-  filters: { contentType?: string } = {},
-  sortBy: { field: string; direction: 'asc' | 'desc' } = { field: 'created_at', direction: 'desc' },
-  page: number = 1,
-  pageSize: number = 50
-) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('User not authenticated');
-
-  let query = supabase
-    .from('documents')
-    .select('*', { count: 'exact' })
-    .eq('user_id', user.id);
-
-  // Apply content type filter if provided
-  if (filters.contentType) {
-    query = query.eq('content_type', filters.contentType);
-  }
-
-  // Apply sorting
-  query = query.order(sortBy.field, { ascending: sortBy.direction === 'asc' });
-
-  // Apply pagination
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-  query = query.range(from, to);
-
-  const { data, error, count } = await query;
-
-  if (error) {
-    console.error('Error fetching documents:', error);
-    throw error;
-  }
-
-  const totalPages = count ? Math.ceil(count / pageSize) : 0;
-
-  return { 
-    documents: data || [], 
-    total: count || 0,
-    totalPages,
-    currentPage: page,
-    pageSize
-  };
-};
-
 export const getAllDocumentsForAI = async () => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
@@ -688,53 +876,64 @@ export const createDocument = async (documentData: {
   title: string;
   content: string;
   content_type: string;
-  is_template?: boolean;
+  folder_id?: string;
+  tags?: string[];
+  status?: string;
   metadata?: any;
 }) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  const { data, error } = await supabase.rpc('create_document', {
-    p_title: documentData.title,
-    p_content: documentData.content,
-    p_content_type: documentData.content_type,
-    p_is_template: documentData.is_template || false,
-    p_metadata: documentData.metadata || {}
-  });
+  const { data, error } = await supabase
+    .from('documents')
+    .insert({
+      user_id: user.id,
+      title: documentData.title,
+      content: documentData.content,
+      content_type: documentData.content_type,
+      folder_id: documentData.folder_id || null,
+      tags: documentData.tags || [],
+      status: documentData.status || 'draft',
+      metadata: documentData.metadata || {},
+      organization_id: user.id
+    })
+    .select()
+    .single();
 
   if (error) {
     console.error('Error creating document:', error);
     throw error;
   }
 
-  return { id: data };
+  return data;
 };
 
 export const updateDocument = async (documentId: string, updates: {
   title?: string;
   content?: string;
   content_type?: string;
-  is_template?: boolean;
+  folder_id?: string;
+  tags?: string[];
+  status?: string;
   metadata?: any;
 }) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  const { error } = await supabase.rpc('update_document', {
-    p_document_id: documentId,
-    p_title: updates.title,
-    p_content: updates.content,
-    p_content_type: updates.content_type,
-    p_is_template: updates.is_template,
-    p_metadata: updates.metadata
-  });
+  const { data, error } = await supabase
+    .from('documents')
+    .update(updates)
+    .eq('id', documentId)
+    .eq('user_id', user.id)
+    .select()
+    .single();
 
   if (error) {
     console.error('Error updating document:', error);
     throw error;
   }
 
-  return { success: true };
+  return data;
 };
 
 export const deleteDocument = async (documentId: string) => {

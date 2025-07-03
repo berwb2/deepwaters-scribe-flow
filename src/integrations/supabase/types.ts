@@ -11,6 +11,7 @@ export type Database = {
     Tables: {
       ai_sessions: {
         Row: {
+          assistant_identifier: string | null
           chapter_id: string | null
           chat_history: Json | null
           context_summary: string | null
@@ -23,6 +24,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          assistant_identifier?: string | null
           chapter_id?: string | null
           chat_history?: Json | null
           context_summary?: string | null
@@ -35,6 +37,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          assistant_identifier?: string | null
           chapter_id?: string | null
           chat_history?: Json | null
           context_summary?: string | null
