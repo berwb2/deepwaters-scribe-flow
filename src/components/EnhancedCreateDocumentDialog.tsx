@@ -67,11 +67,11 @@ const EnhancedCreateDocumentDialog: React.FC<EnhancedCreateDocumentDialogProps> 
         content,
         content_type: contentType,
         folder_id: selectedFolderId || undefined,
-        tags,
         status,
         metadata: {
           created_with_enhanced_editor: true,
-          creation_timestamp: new Date().toISOString()
+          creation_timestamp: new Date().toISOString(),
+          tags: tags // Store tags in metadata since the API doesn't support tags directly
         }
       });
 

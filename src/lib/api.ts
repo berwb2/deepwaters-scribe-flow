@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { DocumentMeta, FolderMeta } from "@/types/documents";
 
@@ -328,7 +329,7 @@ export const listFolderDocuments = async (folderId: string) => {
   };
 };
 
-// Enhanced document management functions
+// Simple document listing function
 export const listDocuments = async (
   filters: { 
     contentType?: string;
@@ -447,6 +448,7 @@ export const createDocument = async (documentData: {
   content: string;
   content_type: string;
   folder_id?: string;
+  tags?: string[];
   status?: string;
   metadata?: any;
   is_template?: boolean;
