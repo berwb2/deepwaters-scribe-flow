@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 export const listDocuments = async (
@@ -19,40 +18,36 @@ export const listDocuments = async (
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  // Build query parts separately to avoid type complexity
-  const baseQuery = supabase.from('documents').select('*', { count: 'exact' });
+  // Build the query using a more direct approach to avoid type complexity
+  const baseSelect = supabase.from('documents').select('*', { count: 'exact' });
   
-  // Create filter conditions array
-  const conditions: any[] = [{ user_id: user.id }];
-  
+  // Apply user filter first
+  let query = baseSelect.eq('user_id', user.id);
+
+  // Apply each filter conditionally without complex chaining
   if (filters.contentType && filters.contentType !== 'all') {
-    conditions.push({ content_type: filters.contentType });
+    query = query.eq('content_type', filters.contentType);
   }
   
   if (filters.folder_id) {
-    conditions.push({ folder_id: filters.folder_id });
+    query = query.eq('folder_id', filters.folder_id);
   }
   
   if (filters.status) {
-    conditions.push({ status: filters.status });
+    query = query.eq('status', filters.status);
   }
 
-  // Apply all conditions at once
-  let finalQuery = baseQuery;
-  conditions.forEach(condition => {
-    const [key, value] = Object.entries(condition)[0];
-    finalQuery = finalQuery.eq(key, value);
-  });
-
-  // Apply search filter if present
+  // Apply search filter separately to avoid type complexity
   if (filters.search) {
-    finalQuery = finalQuery.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
+    query = query.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
   }
 
-  // Apply sorting and pagination
-  const { data, error, count } = await finalQuery
+  // Execute the query with sorting and pagination in one final step
+  const result = await query
     .order(sortBy.field, { ascending: sortBy.direction === 'asc' })
     .range(from, to);
+
+  const { data, error, count } = result;
 
   if (error) {
     console.error('Error fetching documents:', error);
