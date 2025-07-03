@@ -14,6 +14,7 @@ export interface DocumentMeta {
   is_template: boolean | null;
   metadata: Json | null;
   user_id: string;
+  tags: string[];
 }
 
 export interface FolderPriority {

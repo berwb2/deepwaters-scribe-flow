@@ -318,7 +318,11 @@ export const listFolderDocuments = async (folderId: string) => {
     throw error;
   }
 
-  const documents = data?.map(item => item.documents).filter(Boolean) || [];
+  const documents = data?.map(item => ({
+    ...(item.documents || {}),
+    tags: []
+  })) || [];
+  
   return { 
     documents,
     total: documents.length
@@ -543,9 +547,9 @@ export const searchDocuments = async (query: string) => {
 };
 
 // AI Functions
-export const callGrandStrategist = async (prompt: string) => {
+export const callGrandStrategist = async (prompt: string, context?: any) => {
   const { data, error } = await supabase.functions.invoke('grand-strategist', {
-    body: { prompt }
+    body: { prompt, context }
   });
 
   if (error) {
@@ -556,7 +560,7 @@ export const callGrandStrategist = async (prompt: string) => {
   return data;
 };
 
-export const getAISession = async (sessionId: string) => {
+export const getAISession = async (sessionId: string, sessionType: string) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
@@ -569,18 +573,13 @@ export const getAISession = async (sessionId: string) => {
 
   if (error) {
     console.error('Error fetching AI session:', error);
-    throw error;
+    return null;
   }
 
   return data;
 };
 
-export const createAISession = async (sessionData: {
-  session_type: string;
-  document_id?: string;
-  chapter_id?: string;
-  assistant_identifier?: string;
-}) => {
+export const createAISession = async (documentId: string, sessionType: string) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
@@ -588,7 +587,9 @@ export const createAISession = async (sessionData: {
     .from('ai_sessions')
     .insert({
       user_id: user.id,
-      ...sessionData
+      document_id: documentId,
+      session_type: sessionType,
+      chat_history: []
     })
     .select()
     .single();

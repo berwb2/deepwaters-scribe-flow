@@ -108,7 +108,7 @@ const Documents = () => {
   const availableTags = Array.from(
     new Set(
       documents
-        .flatMap(doc => (doc.tags || []))
+        .flatMap(doc => doc.tags || [])
         .filter(Boolean)
     )
   ).sort();
@@ -316,8 +316,7 @@ const Documents = () => {
                         document={{
                           ...doc,
                           content_type: doc.content_type as DocType,
-                          updated_at: formatDate(doc.updated_at),
-                          tags: doc.tags || []
+                          updated_at: formatDate(doc.updated_at)
                         }}
                         onUpdate={handleRefresh}
                       />
