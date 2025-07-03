@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export const listDocuments = async (
@@ -26,22 +27,22 @@ export const listDocuments = async (
 
   // Apply content type filter
   if (filters.contentType && filters.contentType !== 'all') {
-    query = query.eq('content_type', filters.contentType);
+    query = query.eq('content_type', filters.contentType) as any;
   }
   
   // Apply folder filter
   if (filters.folder_id) {
-    query = query.eq('folder_id', filters.folder_id);
+    query = query.eq('folder_id', filters.folder_id) as any;
   }
   
   // Apply status filter
   if (filters.status) {
-    query = query.eq('status', filters.status);
+    query = query.eq('status', filters.status) as any;
   }
 
   // Apply search filter
   if (filters.search) {
-    query = query.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
+    query = query.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`) as any;
   }
 
   // Execute query with sorting and pagination
