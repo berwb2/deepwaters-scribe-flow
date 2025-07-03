@@ -16,36 +16,40 @@ export const listDocuments = async (
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  // Build query step by step to avoid deep type instantiation
-  let query = supabase
+  // Use a more explicit approach to avoid deep type instantiation
+  const baseQuery = supabase
     .from('documents')
-    .select('*', { count: 'exact' })
-    .eq('user_id', user.id);
+    .select('*', { count: 'exact' });
 
-  // Apply filters one by one
+  // Build the query step by step using explicit variables
+  let finalQuery = baseQuery.eq('user_id', user.id);
+
+  // Apply filters conditionally
   if (filters.contentType && filters.contentType !== 'all') {
-    query = query.eq('content_type', filters.contentType);
+    finalQuery = finalQuery.eq('content_type', filters.contentType);
   }
 
   if (filters.search) {
-    query = query.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
+    finalQuery = finalQuery.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
   }
 
   if (filters.folder_id) {
-    query = query.eq('folder_id', filters.folder_id);
+    finalQuery = finalQuery.eq('folder_id', filters.folder_id);
   }
 
   if (filters.status) {
-    query = query.eq('status', filters.status);
+    finalQuery = finalQuery.eq('status', filters.status);
   }
 
   // Apply sorting and pagination
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
   
-  const { data, error, count } = await query
+  finalQuery = finalQuery
     .order(sortBy.field, { ascending: sortBy.direction === 'asc' })
     .range(from, to);
+
+  const { data, error, count } = await finalQuery;
 
   if (error) {
     console.error('Error fetching documents:', error);
