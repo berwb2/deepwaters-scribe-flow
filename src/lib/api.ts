@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { DocumentMeta, FolderMeta } from "@/types/documents";
 
@@ -548,8 +547,8 @@ export const searchDocuments = async (query: string) => {
   })) || [];
 };
 
-// AI Functions - simplified to remove the complex type issues
-export const callGrandStrategist = async (prompt: string) => {
+// AI Functions - simplified with basic types
+export const callGrandStrategist = async (prompt: string): Promise<any> => {
   const { data, error } = await supabase.functions.invoke('grand-strategist', {
     body: { prompt }
   });
