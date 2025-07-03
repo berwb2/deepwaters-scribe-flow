@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,9 +9,9 @@ import RichTextEditor from '@/components/RichTextEditor';
 import DocumentRenderer from '@/components/DocumentRenderer';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
-import { getDocument, updateDocument, callGrandStrategist, getAISession, createAISession, updateAISession } from '@/lib/api';
+import { getDocument, updateDocument } from '@/lib/api';
 import { DOCUMENT_TYPES } from '@/types/documentTypes';
-import { ArrowLeft, Edit, Calendar, Clock, MessageSquare, ChevronDown, ChevronUp, Eye } from 'lucide-react';
+import { ArrowLeft, Edit, Calendar, Clock, ChevronDown, ChevronUp, Eye } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -24,17 +25,11 @@ const ViewDocument = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
-  const [showAI, setShowAI] = useState(false);
-  const [aiMessages, setAiMessages] = useState<any[]>([]);
-  const [aiInput, setAiInput] = useState('');
-  const [isAiLoading, setIsAiLoading] = useState(false);
-  const [aiSession, setAiSession] = useState<any>(null);
   const [tocOpen, setTocOpen] = useState(!isMobile);
 
   useEffect(() => {
     if (id) {
       loadDocument();
-      initializeAI();
     }
   }, [id]);
 
@@ -53,28 +48,6 @@ const ViewDocument = () => {
       navigate('/documents');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const initializeAI = async () => {
-    if (!id) return;
-    
-    try {
-      let session = await getAISession(id);
-      if (!session) {
-        session = await createAISession(id);
-      }
-      setAiSession(session);
-      
-      // Safely handle chat_history with proper type checking
-      const chatHistory = session.chat_history;
-      if (Array.isArray(chatHistory)) {
-        setAiMessages(chatHistory);
-      } else {
-        setAiMessages([]);
-      }
-    } catch (error) {
-      console.error('Error initializing AI:', error);
     }
   };
 
@@ -98,38 +71,6 @@ const ViewDocument = () => {
       toast.error('Failed to save document');
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleAiQuestion = async () => {
-    if (!aiInput.trim() || !document || !aiSession) return;
-
-    const userMessage = aiInput.trim();
-    setAiInput('');
-    setIsAiLoading(true);
-
-    const newMessages = [...aiMessages, { role: 'user', content: userMessage }];
-    setAiMessages(newMessages);
-
-    try {
-      const response = await callGrandStrategist(userMessage);
-
-      const assistantMessage = { role: 'assistant', content: response.response || response };
-      const updatedMessages = [...newMessages, assistantMessage];
-      setAiMessages(updatedMessages);
-
-      // Update AI session with chat history
-      await updateAISession(aiSession.id, {
-        chat_history: updatedMessages
-      });
-    } catch (error) {
-      console.error('Error calling AI:', error);
-      setAiMessages([...newMessages, { 
-        role: 'assistant', 
-        content: 'I apologize, but I encountered an error. Please check your AI configuration and try again.' 
-      }]);
-    } finally {
-      setIsAiLoading(false);
     }
   };
 
@@ -273,7 +214,7 @@ const ViewDocument = () => {
               )}
 
               {/* Main Content */}
-              <div className={`${tableOfContents.length > 0 ? 'lg:col-span-6' : 'lg:col-span-9'}`}>
+              <div className={`${tableOfContents.length > 0 ? 'lg:col-span-9' : 'lg:col-span-12'}`}>
                 <Card className="border-blue-200 shadow-xl bg-white/95 backdrop-blur-sm">
                   <CardHeader className="bg-gradient-to-r from-blue-600 to-teal-600 text-white">
                     <div className="flex flex-col space-y-4">
@@ -295,16 +236,6 @@ const ViewDocument = () => {
                         </div>
                         
                         <div className="flex items-center space-x-2">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => setShowAI(!showAI)}
-                            className="flex-shrink-0 bg-white/20 hover:bg-white/30 text-white border-white/30"
-                          >
-                            <MessageSquare className="mr-2 h-4 w-4" />
-                            {showAI ? 'Hide' : 'Show'} AI
-                          </Button>
-                          
                           {isEditing ? (
                             <div className="flex items-center space-x-2">
                               <Button
@@ -389,83 +320,6 @@ const ViewDocument = () => {
                   </CardContent>
                 </Card>
               </div>
-
-              {/* AI Chat Panel */}
-              {showAI && (
-                <div className="lg:col-span-3">
-                  <Card className="sticky top-6 h-[600px] flex flex-col shadow-xl border-purple-200">
-                    <CardHeader className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-t-lg">
-                      <CardTitle className="text-lg">Grand Strategist AI</CardTitle>
-                      <p className="text-sm opacity-90">Your intelligent writing assistant</p>
-                    </CardHeader>
-                    
-                    <CardContent className="flex-1 flex flex-col p-4">
-                      {/* Chat Messages */}
-                      <div className="flex-1 overflow-y-auto space-y-3 mb-4">
-                        {aiMessages.length === 0 && (
-                          <div className="text-center text-gray-500 py-8">
-                            <MessageSquare className="mx-auto h-12 w-12 text-purple-300 mb-3" />
-                            <p className="text-sm">Ask me anything about your document!</p>
-                            <p className="text-xs text-gray-400 mt-1">I can help with writing, editing, and analysis</p>
-                          </div>
-                        )}
-                        
-                        {aiMessages.map((message, index) => (
-                          <div
-                            key={index}
-                            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                          >
-                            <div
-                              className={`max-w-[85%] px-3 py-2 rounded-lg text-sm shadow-sm ${
-                                message.role === 'user'
-                                  ? 'bg-blue-600 text-white'
-                                  : 'bg-gray-100 text-gray-800 border'
-                              }`}
-                            >
-                              <div className="whitespace-pre-wrap break-words">{message.content}</div>
-                            </div>
-                          </div>
-                        ))}
-                        
-                        {isAiLoading && (
-                          <div className="flex justify-start">
-                            <div className="bg-gray-100 rounded-lg px-3 py-2 border">
-                              <div className="flex space-x-1">
-                                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div>
-                                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-                                <div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Chat Input */}
-                      <div className="border-t pt-4">
-                        <div className="flex space-x-2">
-                          <input
-                            type="text"
-                            value={aiInput}
-                            onChange={(e) => setAiInput(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleAiQuestion()}
-                            placeholder="Ask about your document..."
-                            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                            disabled={isAiLoading}
-                          />
-                          <Button
-                            onClick={handleAiQuestion}
-                            disabled={!aiInput.trim() || isAiLoading}
-                            size="sm"
-                            className="bg-purple-600 hover:bg-purple-700"
-                          >
-                            Send
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
             </div>
           </div>
         </main>
