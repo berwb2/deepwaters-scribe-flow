@@ -60,9 +60,9 @@ const ViewDocument = () => {
     if (!id) return;
     
     try {
-      let session = await getAISession(id, 'document');
+      let session = await getAISession(id);
       if (!session) {
-        session = await createAISession(id, 'document');
+        session = await createAISession(id);
       }
       setAiSession(session);
       
@@ -112,12 +112,7 @@ const ViewDocument = () => {
     setAiMessages(newMessages);
 
     try {
-      const response = await callGrandStrategist(userMessage, {
-        id: document.id,
-        title: document.title,
-        content: document.content,
-        type: 'document'
-      });
+      const response = await callGrandStrategist(userMessage);
 
       const assistantMessage = { role: 'assistant', content: response.response || response };
       const updatedMessages = [...newMessages, assistantMessage];

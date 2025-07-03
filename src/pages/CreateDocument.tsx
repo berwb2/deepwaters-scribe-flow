@@ -62,8 +62,7 @@ const CreateDocument = () => {
         content,
         content_type: documentType,
         is_template: false,
-        metadata: folderId ? { folder_id: folderId } : {},
-        tags: []
+        metadata: folderId ? { folder_id: folderId } : {}
       });
       
       toast.success("Document created successfully!");
@@ -188,7 +187,8 @@ const CreateDocument = () => {
                             updated_at: new Date().toISOString(),
                             user_id: '',
                             is_template: false,
-                            metadata: {}
+                            metadata: {},
+                            tags: []
                           }} 
                           className="min-h-96"
                         />

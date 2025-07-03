@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { DocumentMeta, FolderMeta } from "@/types/documents";
 
@@ -448,7 +447,6 @@ export const createDocument = async (documentData: {
   content: string;
   content_type: string;
   folder_id?: string;
-  tags?: string[];
   status?: string;
   metadata?: any;
   is_template?: boolean;
@@ -548,7 +546,7 @@ export const searchDocuments = async (query: string) => {
   })) || [];
 };
 
-// AI Functions
+// AI Functions - simplified to remove the complex type issues
 export const callGrandStrategist = async (prompt: string) => {
   const { data, error } = await supabase.functions.invoke('grand-strategist', {
     body: { prompt }
