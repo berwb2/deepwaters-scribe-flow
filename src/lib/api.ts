@@ -116,30 +116,30 @@ export const updateUserProfile = async (updates: { display_name?: string }) => {
   return data;
 };
 
-// Enhanced Folder Management Functions with enterprise capabilities
-export interface EnhancedFolderCreationData {
+// Folder Management Functions
+export interface FolderCreationData {
   name: string;
   description?: string | null;
   category?: string;
   priority?: string;
   color?: string;
   parent_id?: string | null;
-  organization_id?: string;
 }
 
-export const createEnhancedFolder = async (folderData: EnhancedFolderCreationData) => {
+export const createEnhancedFolder = async (folderData: FolderCreationData) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
   const { data, error } = await supabase
-    .from('folders')
+    .from('document_folders')
     .insert({
-      created_by: user.id,
+      user_id: user.id,
       name: folderData.name,
       description: folderData.description,
       color: folderData.color,
-      parent_folder_id: folderData.parent_id,
-      organization_id: user.id
+      category: folderData.category,
+      priority: folderData.priority,
+      parent_id: folderData.parent_id
     })
     .select()
     .single();
@@ -157,20 +157,9 @@ export const listEnhancedFolders = async () => {
   if (!user) throw new Error('User not authenticated');
 
   const { data, error } = await supabase
-    .from('folders')
-    .select(`
-      id,
-      name,
-      description,
-      color,
-      parent_folder_id,
-      created_at,
-      created_by,
-      organization_id,
-      is_archived
-    `)
-    .eq('created_by', user.id)
-    .eq('is_archived', false)
+    .from('document_folders')
+    .select('*')
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -184,15 +173,13 @@ export const listEnhancedFolders = async () => {
   
   if (folderIds.length > 0) {
     const { data: countsData, error: countsError } = await supabase
-      .from('documents')
+      .from('folder_documents')
       .select('folder_id')
       .in('folder_id', folderIds);
 
     if (!countsError && countsData) {
       documentCounts = countsData.reduce((acc, item) => {
-        if (item.folder_id) {
-          acc[item.folder_id] = (acc[item.folder_id] || 0) + 1;
-        }
+        acc[item.folder_id] = (acc[item.folder_id] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
     }
@@ -211,10 +198,10 @@ export const getEnhancedFolder = async (folderId: string) => {
   if (!user) throw new Error('User not authenticated');
 
   const { data, error } = await supabase
-    .from('folders')
+    .from('document_folders')
     .select('*')
     .eq('id', folderId)
-    .eq('created_by', user.id)
+    .eq('user_id', user.id)
     .single();
 
   if (error) {
@@ -225,15 +212,15 @@ export const getEnhancedFolder = async (folderId: string) => {
   return data;
 };
 
-export const updateEnhancedFolder = async (folderId: string, updates: Partial<EnhancedFolderCreationData>) => {
+export const updateEnhancedFolder = async (folderId: string, updates: Partial<FolderCreationData>) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
   const { data, error } = await supabase
-    .from('folders')
+    .from('document_folders')
     .update(updates)
     .eq('id', folderId)
-    .eq('created_by', user.id)
+    .eq('user_id', user.id)
     .select()
     .single();
 
@@ -250,10 +237,10 @@ export const deleteEnhancedFolder = async (folderId: string) => {
   if (!user) throw new Error('User not authenticated');
 
   const { error } = await supabase
-    .from('folders')
+    .from('document_folders')
     .delete()
     .eq('id', folderId)
-    .eq('created_by', user.id);
+    .eq('user_id', user.id);
 
   if (error) {
     console.error('Error deleting enhanced folder:', error);
@@ -267,12 +254,12 @@ export const addDocumentToEnhancedFolder = async (folderId: string, documentId: 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  // Update the document's folder_id directly
   const { data, error } = await supabase
-    .from('documents')
-    .update({ folder_id: folderId })
-    .eq('id', documentId)
-    .eq('user_id', user.id)
+    .from('folder_documents')
+    .insert({
+      folder_id: folderId,
+      document_id: documentId
+    })
     .select()
     .single();
 
@@ -284,24 +271,22 @@ export const addDocumentToEnhancedFolder = async (folderId: string, documentId: 
   return data;
 };
 
-export const removeDocumentFromEnhancedFolder = async (documentId: string) => {
+export const removeDocumentFromEnhancedFolder = async (folderId: string, documentId: string) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  const { data, error } = await supabase
-    .from('documents')
-    .update({ folder_id: null })
-    .eq('id', documentId)
-    .eq('user_id', user.id)
-    .select()
-    .single();
+  const { error } = await supabase
+    .from('folder_documents')
+    .delete()
+    .eq('folder_id', folderId)
+    .eq('document_id', documentId);
 
   if (error) {
     console.error('Error removing document from enhanced folder:', error);
     throw error;
   }
 
-  return data;
+  return { success: true };
 };
 
 export const listEnhancedFolderDocuments = async (folderId: string) => {
@@ -309,18 +294,31 @@ export const listEnhancedFolderDocuments = async (folderId: string) => {
   if (!user) throw new Error('User not authenticated');
 
   const { data, error } = await supabase
-    .from('documents')
-    .select('*')
-    .eq('folder_id', folderId)
-    .eq('user_id', user.id)
-    .order('updated_at', { ascending: false });
+    .from('folder_documents')
+    .select(`
+      document_id,
+      added_at,
+      documents (
+        id,
+        title,
+        content,
+        content_type,
+        created_at,
+        updated_at,
+        is_template,
+        metadata,
+        user_id
+      )
+    `)
+    .eq('folder_id', folderId);
 
   if (error) {
     console.error('Error fetching enhanced folder documents:', error);
     throw error;
   }
 
-  return { documents: data || [] };
+  const documents = data?.map(item => item.documents).filter(Boolean) || [];
+  return { documents };
 };
 
 // Enhanced document management functions

@@ -24,7 +24,7 @@ import {
   createEnhancedFolder, 
   updateEnhancedFolder, 
   deleteEnhancedFolder,
-  EnhancedFolderCreationData 
+  FolderCreationData 
 } from '@/lib/api';
 
 interface FolderItem {
@@ -32,7 +32,7 @@ interface FolderItem {
   name: string;
   description?: string;
   color?: string;
-  parent_folder_id?: string;
+  parent_id?: string;
   document_count: number;
   created_at: string;
   children?: FolderItem[];
@@ -55,7 +55,7 @@ const EnhancedFolderManager: React.FC<EnhancedFolderManagerProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   
-  const [newFolder, setNewFolder] = useState<EnhancedFolderCreationData>({
+  const [newFolder, setNewFolder] = useState<FolderCreationData>({
     name: '',
     description: '',
     color: '#3b82f6',
@@ -87,8 +87,8 @@ const EnhancedFolderManager: React.FC<EnhancedFolderManagerProps> = ({
     // Build hierarchy
     folders.forEach(folder => {
       const folderItem = folderMap.get(folder.id)!;
-      if (folder.parent_folder_id) {
-        const parent = folderMap.get(folder.parent_folder_id);
+      if (folder.parent_id) {
+        const parent = folderMap.get(folder.parent_id);
         if (parent) {
           parent.children!.push(folderItem);
         }
