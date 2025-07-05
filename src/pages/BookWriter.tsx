@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
+import MobileNav from '@/components/MobileNav';
 import AIAssistantSidebar from '@/components/AIAssistantSidebar';
+import DashboardWidget from '@/components/DashboardWidget';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +14,7 @@ import { BookOpen, Plus, Edit3, Save, Brain, FileText } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { getCurrentUser, listDocuments, updateDocument } from '@/lib/api';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Chapter {
   id: string;
@@ -38,6 +41,7 @@ interface Book {
 }
 
 const BookWriter = () => {
+  const isMobile = useIsMobile();
   const [books, setBooks] = useState<Book[]>([]);
   const [activeBook, setActiveBook] = useState<Book | null>(null);
   const [activeChapter, setActiveChapter] = useState<Chapter | null>(null);
@@ -305,20 +309,25 @@ const BookWriter = () => {
 
   if (!activeBook) {
     return (
-      <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
         <Navbar />
+        <MobileNav />
         
-        <div className="flex flex-1">
-          <Sidebar />
+        <div className="flex">
+          {!isMobile && <Sidebar />}
           
-          <main className="flex-1 p-8">
-            <div className="mb-8">
-              <h1 className="text-3xl font-serif font-medium text-blue-600 mb-2">📚 Book Writing Studio</h1>
-              <p className="text-blue-700">Create and write your books with AI assistance</p>
-            </div>
+          <main className={`flex-1 ${isMobile ? 'px-4 pt-20' : 'p-6'}`}>
+            <div className="max-w-6xl mx-auto">
+              {/* Quick Actions Dashboard */}
+              <DashboardWidget />
+              
+              <div className="mb-8">
+                <h1 className="text-3xl font-serif font-medium text-blue-600 mb-2">📚 Book Writing Studio</h1>
+                <p className="text-blue-700">Create and write your books with AI assistance</p>
+              </div>
 
-            {isCreatingBook ? (
-              <Card className="max-w-md border-blue-200 bg-white">
+              {isCreatingBook ? (
+                <Card className="max-w-md border-blue-200 bg-white">
                 <CardHeader>
                   <CardTitle className="text-blue-700">Create New Book</CardTitle>
                 </CardHeader>
@@ -368,21 +377,21 @@ const BookWriter = () => {
                     </Button>
                   </div>
                 </CardContent>
-              </Card>
-            ) : (
-              <>
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-medium text-blue-700">My Books</h2>
-                  <Button 
-                    onClick={() => setIsCreatingBook(true)}
-                    className="bg-blue-500 hover:bg-blue-600"
-                  >
-                    <Plus className="mr-2 h-4 w-4" /> New Book
-                  </Button>
-                </div>
+                </Card>
+              ) : (
+                <>
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-medium text-blue-700">My Books</h2>
+                    <Button 
+                      onClick={() => setIsCreatingBook(true)}
+                      className="bg-blue-500 hover:bg-blue-600"
+                    >
+                      <Plus className="mr-2 h-4 w-4" /> New Book
+                    </Button>
+                  </div>
 
-                {books.length === 0 ? (
-                  <Card className="border-blue-200 bg-white">
+                  {books.length === 0 ? (
+                    <Card className="border-blue-200 bg-white">
                     <CardContent className="flex flex-col items-center justify-center py-12">
                       <BookOpen className="h-16 w-16 text-blue-400 mb-4" />
                       <h3 className="text-xl font-medium mb-2 text-blue-600">Start Your Writing Journey</h3>
@@ -396,9 +405,9 @@ const BookWriter = () => {
                         <Plus className="mr-2 h-4 w-4" /> Create Your First Book
                       </Button>
                     </CardContent>
-                  </Card>
-                ) : (
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    </Card>
+                  ) : (
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {books.map((book) => (
                       <Card key={book.id} className="hover:shadow-lg transition-shadow border-blue-200 bg-white cursor-pointer" onClick={() => setActiveBook(book)}>
                         <CardHeader className="pb-3">
@@ -418,18 +427,13 @@ const BookWriter = () => {
                         </CardContent>
                       </Card>
                     ))}
-                  </div>
-                )}
-              </>
-            )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </main>
         </div>
-        
-        <footer className="py-6 border-t border-blue-200 bg-blue-50">
-          <div className="container mx-auto px-4 text-center text-blue-600">
-            © {new Date().getFullYear()} DeepWaters. All rights reserved.
-          </div>
-        </footer>
       </div>
     );
   }

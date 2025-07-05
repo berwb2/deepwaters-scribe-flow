@@ -9,6 +9,68 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      activity_logs: {
+        Row: {
+          action: string
+          client_id: string | null
+          created_at: string
+          details: Json | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          client_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          client_id?: string | null
+          created_at?: string
+          details?: Json | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_logs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_users: {
+        Row: {
+          created_at: string
+          id: string
+          last_login: string | null
+          role: string | null
+          user_id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_login?: string | null
+          role?: string | null
+          user_id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_login?: string | null
+          role?: string | null
+          user_id?: string
+          username?: string
+        }
+        Relationships: []
+      }
       ai_sessions: {
         Row: {
           assistant_identifier: string | null
@@ -160,6 +222,95 @@ export type Database = {
             columns: ["book_id"]
             isOneToOne: false
             referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_profiles: {
+        Row: {
+          admin_notes: string | null
+          budget_range: string | null
+          company_name: string
+          contact_person: string
+          created_at: string
+          current_stage: string | null
+          email: string
+          id: string
+          industry: string
+          phone: string | null
+          project_type: string | null
+          timeline_requirements: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          budget_range?: string | null
+          company_name: string
+          contact_person: string
+          created_at?: string
+          current_stage?: string | null
+          email: string
+          id?: string
+          industry: string
+          phone?: string | null
+          project_type?: string | null
+          timeline_requirements?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          budget_range?: string | null
+          company_name?: string
+          contact_person?: string
+          created_at?: string
+          current_stage?: string | null
+          email?: string
+          id?: string
+          industry?: string
+          phone?: string | null
+          project_type?: string | null
+          timeline_requirements?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      client_responses: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          question_category: string
+          question_text: string
+          response_text: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          question_category: string
+          question_text: string
+          response_text?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          question_category?: string
+          question_text?: string
+          response_text?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_responses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -365,6 +516,57 @@ export type Database = {
         }
         Relationships: []
       }
+      file_uploads: {
+        Row: {
+          client_id: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          is_active: boolean | null
+          question_id: string | null
+          upload_timestamp: string
+        }
+        Insert: {
+          client_id: string
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          is_active?: boolean | null
+          question_id?: string | null
+          upload_timestamp?: string
+        }
+        Update: {
+          client_id?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          is_active?: boolean | null
+          question_id?: string | null
+          upload_timestamp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_uploads_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "file_uploads_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "client_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       folder_documents: {
         Row: {
           added_at: string
@@ -421,6 +623,44 @@ export type Database = {
           settings?: Json | null
         }
         Relationships: []
+      }
+      project_stages: {
+        Row: {
+          client_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          stage_name: string
+          status: string | null
+        }
+        Insert: {
+          client_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          stage_name: string
+          status?: string | null
+        }
+        Update: {
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          stage_name?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_stages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "client_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

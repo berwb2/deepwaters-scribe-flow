@@ -9,6 +9,7 @@ import RichTextEditor from '@/components/RichTextEditor';
 import DocumentRenderer from '@/components/DocumentRenderer';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
+import DashboardWidget from '@/components/DashboardWidget';
 import { getDocument, updateDocument } from '@/lib/api';
 import { DOCUMENT_TYPES } from '@/types/documentTypes';
 import { ArrowLeft, Edit, Calendar, Clock, ChevronDown, ChevronUp, Eye } from 'lucide-react';
@@ -160,6 +161,9 @@ const ViewDocument = () => {
         
         <main className={`flex-1 ${isMobile ? 'p-2' : 'p-6'}`}>
           <div className="max-w-7xl mx-auto">
+            {/* Quick Actions Dashboard */}
+            <DashboardWidget />
+            
             {/* Header */}
             <div className="mb-6">
               <Button variant="ghost" asChild className="mb-4 text-blue-600 hover:text-blue-800">

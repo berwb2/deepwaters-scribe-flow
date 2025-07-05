@@ -3,6 +3,7 @@ import React from 'react';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import MobileNav from '@/components/MobileNav';
+import DashboardWidget from '@/components/DashboardWidget';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Brain, Settings } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -18,8 +19,13 @@ const GrandStrategist = () => {
       <div className="flex flex-1">
         {!isMobile && <Sidebar />}
         
-        <main className="flex-1 flex items-center justify-center p-6">
-          <Card className="max-w-md w-full text-center">
+        <main className="flex-1 p-6">
+          <div className="max-w-7xl mx-auto">
+            {/* Quick Actions Dashboard */}
+            <DashboardWidget />
+            
+            <div className="flex items-center justify-center">
+              <Card className="max-w-md w-full text-center">
             <CardHeader>
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Brain className="h-8 w-8 text-gray-400" />
@@ -36,6 +42,8 @@ const GrandStrategist = () => {
               </p>
             </CardContent>
           </Card>
+            </div>
+          </div>
         </main>
       </div>
     </div>

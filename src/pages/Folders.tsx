@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Navbar from '@/components/Navbar';
+import Sidebar from '@/components/Sidebar';
+import MobileNav from '@/components/MobileNav';
+import DashboardWidget from '@/components/DashboardWidget';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Folder, List, Grid3X3 } from 'lucide-react';
@@ -10,8 +13,10 @@ import FolderCard from '@/components/FolderCard';
 import FolderTree from '@/components/FolderTree';
 import { FolderMeta, FolderTreeNode } from '@/types/documents';
 import { toast } from '@/components/ui/sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Folders = () => {
+  const isMobile = useIsMobile();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'tree'>('grid');
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
@@ -95,11 +100,19 @@ const Folders = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
+      <MobileNav />
       
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+      <div className="flex">
+        {!isMobile && <Sidebar />}
+        
+        <main className={`flex-1 ${isMobile ? 'px-4 pt-4' : 'p-6'}`}>
+          <div className="max-w-7xl mx-auto">
+            {/* Quick Actions Dashboard */}
+            <DashboardWidget />
+            
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
             <h1 className="text-3xl font-serif font-medium mb-2 text-blue-600">Folders</h1>
             <p className="text-muted-foreground">Organize your documents with folders</p>
@@ -132,9 +145,9 @@ const Folders = () => {
               <Plus className="mr-2 h-4 w-4" /> Create Folder
             </Button>
           </div>
-        </div>
-
-        {folders.length === 0 ? (
+            </div>
+            
+            {folders.length === 0 ? (
           <Card className="border-blue-100">
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Folder className="h-16 w-16 text-blue-300 mb-4" />
@@ -174,20 +187,16 @@ const Folders = () => {
               )}
             </CardContent>
           </Card>
-        )}
-      </main>
+            )}
+          </div>
+        </main>
+      </div>
 
       <CreateFolderDialog
         isOpen={isCreateDialogOpen}
         onClose={() => setIsCreateDialogOpen(false)}
         onFolderCreated={refetch}
       />
-      
-      <footer className="py-6 border-t mt-12">
-        <div className="container mx-auto px-4 text-center text-muted-foreground">
-          © {new Date().getFullYear()} DeepWaters. All rights reserved.
-        </div>
-      </footer>
     </div>
   );
 };

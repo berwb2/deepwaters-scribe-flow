@@ -7,6 +7,7 @@ import MobileNav from '@/components/MobileNav';
 import DocumentCard from '@/components/DocumentCard';
 import EnhancedFolderManager from '@/components/EnhancedFolderManager';
 import EnhancedCreateDocumentDialog from '@/components/EnhancedCreateDocumentDialog';
+import DashboardWidget from '@/components/DashboardWidget';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -122,7 +123,10 @@ const Documents = () => {
         {!isMobile && <Sidebar />}
         
         <main className={`flex-1 ${isMobile ? 'px-4 pt-4' : 'p-6'}`}>
-          <div className="max-w-7xl mx-auto">
+            <div className="max-w-7xl mx-auto">
+            {/* Quick Actions Dashboard */}
+            <DashboardWidget />
+            
             {/* Header */}
             <div className="flex flex-col gap-4 mb-6">
               <div className="flex items-center justify-between">

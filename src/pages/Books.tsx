@@ -3,6 +3,9 @@ import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
+import Sidebar from '@/components/Sidebar';
+import MobileNav from '@/components/MobileNav';
+import DashboardWidget from '@/components/DashboardWidget';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +13,7 @@ import { Plus, Book, Calendar, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import CreateBookDialog from '@/components/CreateBookDialog';
 import { listDocuments } from '@/lib/api';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface BookMeta {
   id: string;
@@ -25,6 +29,7 @@ interface BookMeta {
 
 const Books = () => {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const isMobile = useIsMobile();
   const queryClient = useQueryClient();
 
   // Fetch book documents (documents with content_type 'book')
@@ -78,11 +83,19 @@ const Books = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
       <Navbar />
+      <MobileNav />
       
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+      <div className="flex">
+        {!isMobile && <Sidebar />}
+        
+        <main className={`flex-1 ${isMobile ? 'px-4 pt-4' : 'p-6'}`}>
+          <div className="max-w-6xl mx-auto">
+            {/* Quick Actions Dashboard */}
+            <DashboardWidget />
+            
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
             <h1 className="text-3xl font-serif font-medium mb-2 text-blue-600">Book Writing Studio</h1>
             <p className="text-blue-700">Create and manage your books with organized chapters</p>
@@ -94,9 +107,9 @@ const Books = () => {
           >
             <Plus className="mr-2 h-4 w-4" /> Create New Book
           </Button>
-        </div>
+            </div>
 
-        {books.length === 0 ? (
+            {books.length === 0 ? (
           <Card className="border-blue-200 bg-white shadow-lg">
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Book className="h-16 w-16 text-blue-400 mb-4" />
@@ -112,8 +125,8 @@ const Books = () => {
               </Button>
             </CardContent>
           </Card>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {books.map((book) => (
               <Card key={book.id} className="hover:shadow-lg transition-shadow border-blue-200 bg-white">
                 <CardHeader className="pb-3">
@@ -156,21 +169,17 @@ const Books = () => {
                 </CardContent>
               </Card>
             ))}
+              </div>
+            )}
           </div>
-        )}
-      </main>
+        </main>
+      </div>
 
       <CreateBookDialog
         isOpen={isCreateDialogOpen}
         onClose={() => setIsCreateDialogOpen(false)}
         onBookCreated={handleBookCreated}
       />
-      
-      <footer className="py-6 border-t border-blue-200 bg-blue-50">
-        <div className="container mx-auto px-4 text-center text-blue-600">
-          © {new Date().getFullYear()} DeepWaters. All rights reserved.
-        </div>
-      </footer>
     </div>
   );
 };

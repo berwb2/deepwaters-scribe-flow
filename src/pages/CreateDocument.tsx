@@ -11,6 +11,7 @@ import RichTextEditor from '@/components/RichTextEditor';
 import DocumentRenderer from '@/components/DocumentRenderer';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
+import DashboardWidget from '@/components/DashboardWidget';
 import { useDocumentActions } from '@/hooks/use-document-actions';
 import { DOCUMENT_TYPES, DocumentType, getDocumentTypeTemplate } from '@/types/documentTypes';
 import { ArrowLeft, Eye, Edit } from 'lucide-react';
@@ -86,6 +87,9 @@ const CreateDocument = () => {
         
         <main className={`flex-1 ${isMobile ? 'p-4' : 'p-6'}`}>
           <div className="max-w-6xl mx-auto">
+            {/* Quick Actions Dashboard */}
+            <DashboardWidget />
+            
             <div className="mb-6">
               <Button variant="ghost" asChild className="mb-4">
                 <Link to={folderId ? `/folders/${folderId}` : "/documents"}>
