@@ -480,41 +480,111 @@ export type Database = {
           content: string
           content_type: string
           created_at: string
+          document_type: string | null
           id: string
+          is_deleted: boolean | null
           is_template: boolean | null
           metadata: Json | null
+          parent_id: string | null
+          search_vector: unknown | null
           title: string
           updated_at: string
           user_id: string
           word_count: number | null
+          workspace_id: string | null
         }
         Insert: {
           ai_analysis?: Json | null
           content: string
           content_type: string
           created_at?: string
+          document_type?: string | null
           id?: string
+          is_deleted?: boolean | null
           is_template?: boolean | null
           metadata?: Json | null
+          parent_id?: string | null
+          search_vector?: unknown | null
           title: string
           updated_at?: string
           user_id: string
           word_count?: number | null
+          workspace_id?: string | null
         }
         Update: {
           ai_analysis?: Json | null
           content?: string
           content_type?: string
           created_at?: string
+          document_type?: string | null
           id?: string
+          is_deleted?: boolean | null
           is_template?: boolean | null
           metadata?: Json | null
+          parent_id?: string | null
+          search_vector?: unknown | null
           title?: string
           updated_at?: string
           user_id?: string
           word_count?: number | null
+          workspace_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "documents_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      file_attachments: {
+        Row: {
+          created_at: string | null
+          document_id: string | null
+          extracted_text: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          processed: boolean | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          document_id?: string | null
+          extracted_text?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          processed?: boolean | null
+          user_id?: string
+        }
+        Update: {
+          created_at?: string | null
+          document_id?: string | null
+          extracted_text?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          processed?: boolean | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "file_attachments_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       file_uploads: {
         Row: {
@@ -661,6 +731,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      workspaces: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          owner_id: string
+          settings: Json | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          owner_id?: string
+          settings?: Json | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          owner_id?: string
+          settings?: Json | null
+        }
+        Relationships: []
       }
     }
     Views: {
