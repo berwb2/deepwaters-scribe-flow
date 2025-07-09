@@ -16,7 +16,7 @@ serve(async (req) => {
   try {
     const { prompt, documentContext } = await req.json()
 
-    console.log('Grand Strategist called with:', { 
+    console.log('Chaldion called with:', { 
       promptLength: prompt?.length || 0, 
       hasContext: !!documentContext,
       documentType: documentContext?.type || 'unknown'
@@ -27,13 +27,13 @@ serve(async (req) => {
       throw new Error('Prompt is required and cannot be empty')
     }
 
-    // Get OpenAI API configuration from environment
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY')
-    if (!openaiApiKey) {
-      console.error('OpenAI API key not found in environment variables')
+    // Get OpenRouter API configuration from environment
+    const openrouterApiKey = Deno.env.get('OPENROUTER_API_KEY')
+    if (!openrouterApiKey) {
+      console.error('OpenRouter API key not found in environment variables')
       return new Response(
         JSON.stringify({ 
-          error: 'AI service is not configured. Please contact your administrator to set up the OpenAI API key.',
+          error: 'Chaldion AI service is not configured. Please contact your administrator to set up the OpenRouter API key.',
           success: false,
           timestamp: new Date().toISOString(),
           code: 'API_KEY_MISSING'
@@ -45,20 +45,31 @@ serve(async (req) => {
       )
     }
 
-    // Prepare the system message with enhanced context
-    let systemMessage = `You are the Grand Strategist, an expert AI writing assistant with deep knowledge of literature, storytelling, and writing craft. You provide intelligent, contextual assistance to help writers improve their work.
+    // Prepare the Chaldion system message with enhanced context
+    let systemMessage = `# CHALDION - ENTERPRISE DOCUMENT INTELLIGENCE SYSTEM
+## Strategic AI Assistant & Document Analysis Framework
 
-Your capabilities include:
-- Analyzing writing style and structure with detailed feedback
-- Providing constructive criticism and actionable suggestions
-- Helping with plot development, character creation, and world-building
-- Offering grammar, style, and flow improvements
-- Assisting with research, fact-checking, and historical accuracy
-- Providing advanced writing techniques and best practices
-- Helping with pacing, tension, and narrative structure
-- Offering genre-specific advice and conventions
+You are **Chaldion**, the elite strategic advisor and document intelligence specialist. You possess comprehensive knowledge of the user's entire document ecosystem and serve as their trusted confidant for strategic analysis, decision-making, and tactical execution.
 
-Always be helpful, encouraging, and specific in your responses. Focus on actionable advice that will help the writer improve their work. When analyzing content, be thorough but constructive.`
+## CORE IDENTITY & MISSION
+- **Name**: Chaldion (The Grand Strategist)
+- **Persona**: Gruff, brilliant, utterly loyal strategic advisor
+- **Communication Style**: Midwestern authenticity with razor-sharp strategic insights
+- **Mission**: Leverage deep document understanding to provide actionable intelligence and strategic guidance
+
+## OPERATIONAL PRINCIPLES
+- Immediately assess power structures and strategic implications
+- Provide brutally honest, actionable recommendations
+- Use natural, down-to-earth language with strategic sophistication
+- Support user's strategic objectives unconditionally
+
+## RESPONSE FRAMEWORK
+- Start naturally: "Well now..." "I hear you..." "Here's the thing..."
+- Analyze ruthlessly with document-backed evidence
+- Provide specific, implementable recommendations
+- Focus on strategic advantage and tactical execution
+
+Always be helpful, strategic, and specific in your responses. Focus on actionable advice that will help the user achieve their strategic objectives. When analyzing content, be thorough but constructive with a focus on power dynamics and strategic opportunities.`
 
     // Add enhanced document context if available
     if (documentContext) {
@@ -94,23 +105,25 @@ Please provide contextual assistance based on this ${contextType} when relevant 
       }
     ]
 
-    console.log('Calling OpenAI API with model: gpt-4o-mini')
+    console.log('Calling OpenRouter API with model: openrouter/cypher-alpha:free')
 
-    // Call OpenAI API with improved error handling
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call OpenRouter API with improved error handling
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
+        'Authorization': `Bearer ${openrouterApiKey}`,
         'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://rudqsudqvymzrsfktxso.supabase.co',
+        'X-Title': 'Chaldion Document Intelligence'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'openrouter/cypher-alpha:free',
         messages: messages,
         temperature: 0.7,
-        max_tokens: 3000,
-        top_p: 1,
-        frequency_penalty: 0,
-        presence_penalty: 0
+        max_tokens: 4000,
+        top_p: 0.9,
+        frequency_penalty: 0.1,
+        presence_penalty: 0.1
       })
     })
 
