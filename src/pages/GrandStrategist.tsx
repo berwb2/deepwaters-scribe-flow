@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import MobileNav from '@/components/MobileNav';
 import AIAssistantSidebar from '@/components/AIAssistantSidebar';
-import { Brain, Crown } from 'lucide-react';
+import { Brain, Crown, ArrowLeft, Home } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 
 const GrandStrategist = () => {
@@ -19,6 +21,14 @@ const GrandStrategist = () => {
         <div className="border-b bg-card/50 backdrop-blur-sm">
           <div className="container flex items-center justify-between py-4">
             <div className="flex items-center gap-3">
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/dashboard" className="flex items-center gap-2">
+                  <ArrowLeft className="h-4 w-4" />
+                  <Home className="h-4 w-4" />
+                  Dashboard
+                </Link>
+              </Button>
+              <div className="h-6 w-px bg-border mx-2" />
               <div className="relative">
                 <Crown className="h-8 w-8 text-primary" />
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-background animate-pulse" />

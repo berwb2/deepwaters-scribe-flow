@@ -202,14 +202,16 @@ const AIAssistantSidebar: React.FC<AIAssistantSidebarProps> = ({
                 key={index}
                 className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                <div
-                  className={`max-w-3xl rounded-lg p-4 ${
-                    message.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-card border text-card-foreground'
-                  }`}
-                >
-                  <div className="whitespace-pre-wrap">{message.content}</div>
+                  <div
+                    className={`max-w-3xl rounded-lg p-4 ${
+                      message.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-card border text-card-foreground'
+                    }`}
+                  >
+                    <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap break-words">
+                      {message.content}
+                    </div>
                   <div
                     className={`text-xs mt-3 ${
                       message.role === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
