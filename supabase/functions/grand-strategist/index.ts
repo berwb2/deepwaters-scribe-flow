@@ -7,6 +7,190 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Enterprise Memory Manager
+class ChaldionMemoryManager {
+  constructor(supabase) {
+    this.supabase = supabase
+    this.conversationCache = new Map()
+    this.documentCache = new Map()
+  }
+
+  async getConversationHistory(sessionId, userId) {
+    // Get from Supabase ai_sessions
+    const { data: session, error } = await this.supabase
+      .from('ai_sessions')
+      .select('chat_history')
+      .eq('id', sessionId)
+      .eq('user_id', userId)
+      .single()
+
+    if (error && error.code !== 'PGRST116') {
+      console.error('Error fetching conversation:', error)
+      return []
+    }
+
+    return session?.chat_history || []
+  }
+
+  async saveConversationHistory(sessionId, userId, history, documentId = null) {
+    const { data, error } = await this.supabase
+      .from('ai_sessions')
+      .upsert({
+        id: sessionId,
+        user_id: userId,
+        chat_history: history,
+        document_id: documentId,
+        session_type: 'chaldion_enterprise',
+        assistant_identifier: 'chaldion',
+        is_active: true,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' })
+
+    if (error) {
+      console.error('Error saving conversation:', error)
+    }
+    return data
+  }
+
+  async getDocumentContext(documentId, userId) {
+    if (this.documentCache.has(documentId)) {
+      return this.documentCache.get(documentId)
+    }
+
+    const { data: document, error } = await this.supabase
+      .from('documents')
+      .select('*')
+      .eq('id', documentId)
+      .eq('user_id', userId)
+      .single()
+
+    if (error) {
+      console.error('Error fetching document:', error)
+      return null
+    }
+
+    const context = {
+      title: document.title,
+      content: document.content,
+      type: document.document_type || 'document',
+      metadata: document.metadata || {},
+      wordCount: document.word_count || 0,
+      created: document.created_at,
+      updated: document.updated_at
+    }
+
+    this.documentCache.set(documentId, context)
+    return context
+  }
+
+  async getAllUserDocuments(userId) {
+    const { data: documents, error } = await this.supabase
+      .from('documents')
+      .select('id, title, document_type, word_count, created_at, updated_at')
+      .eq('user_id', userId)
+      .eq('is_deleted', false)
+      .order('updated_at', { ascending: false })
+
+    if (error) {
+      console.error('Error fetching documents:', error)
+      return []
+    }
+
+    return documents || []
+  }
+
+  extractKeyInsights(content) {
+    const insights = {
+      keyFigures: this.extractNumbers(content),
+      dates: this.extractDates(content),
+      entities: this.extractEntities(content),
+      decisions: this.extractDecisions(content),
+      risks: this.extractRisks(content),
+      opportunities: this.extractOpportunities(content)
+    }
+    return insights
+  }
+
+  extractNumbers(content) {
+    const numberPattern = /\$?[\d,]+\.?\d*[%]?/g
+    return content.match(numberPattern) || []
+  }
+
+  extractDates(content) {
+    const datePattern = /\d{1,2}\/\d{1,2}\/\d{4}|\d{4}-\d{2}-\d{2}|January|February|March|April|May|June|July|August|September|October|November|December/g
+    return content.match(datePattern) || []
+  }
+
+  extractEntities(content) {
+    const entityPattern = /\b[A-Z][a-z]+(?:\s[A-Z][a-z]+)*\b/g
+    return content.match(entityPattern) || []
+  }
+
+  extractDecisions(content) {
+    const decisionPattern = /(?:decided|approved|rejected|implemented|cancelled|postponed)[^.!?]*[.!?]/gi
+    return content.match(decisionPattern) || []
+  }
+
+  extractRisks(content) {
+    const riskPattern = /(?:risk|threat|danger|concern|issue|problem|challenge)[^.!?]*[.!?]/gi
+    return content.match(riskPattern) || []
+  }
+
+  extractOpportunities(content) {
+    const opportunityPattern = /(?:opportunity|potential|advantage|benefit|growth|expansion)[^.!?]*[.!?]/gi
+    return content.match(opportunityPattern) || []
+  }
+}
+
+// Enterprise Analytics
+class EnterpriseAnalytics {
+  constructor(supabase) {
+    this.supabase = supabase
+  }
+
+  async trackInteraction(userId, documentId, action, metadata = {}) {
+    await this.supabase
+      .from('activity_logs')
+      .insert({
+        user_id: userId,
+        action: `chaldion_${action}`,
+        details: {
+          document_id: documentId,
+          metadata,
+          timestamp: new Date().toISOString()
+        }
+      })
+  }
+
+  async getUsageMetrics(userId) {
+    const { data, error } = await this.supabase
+      .from('activity_logs')
+      .select('*')
+      .eq('user_id', userId)
+      .like('action', 'chaldion_%')
+      .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+
+    if (error) {
+      console.error('Error fetching metrics:', error)
+      return null
+    }
+
+    return {
+      totalInteractions: data.length,
+      recentActivity: data.slice(-10),
+      topActions: this.aggregateActions(data)
+    }
+  }
+
+  aggregateActions(logs) {
+    const actions = {}
+    logs.forEach(log => {
+      actions[log.action] = (actions[log.action] || 0) + 1
+    })
+    return actions
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -14,12 +198,21 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, documentContext } = await req.json()
+    const { 
+      prompt, 
+      documentContext, 
+      sessionId = 'default-session',
+      documentId,
+      userId 
+    } = await req.json()
 
-    console.log('Chaldion called with:', { 
+    console.log('Chaldion Enterprise called with:', { 
       promptLength: prompt?.length || 0, 
       hasContext: !!documentContext,
-      documentType: documentContext?.type || 'unknown'
+      documentType: documentContext?.type || 'unknown',
+      sessionId,
+      documentId,
+      userId
     })
 
     // Validate input
@@ -45,236 +238,103 @@ serve(async (req) => {
       )
     }
 
-    // Prepare the Chaldion system message with enhanced context
-    let systemMessage = `# CHALDION - ENTERPRISE DOCUMENT INTELLIGENCE SYSTEM
-## Strategic AI Assistant & Document Analysis Framework
+    // Initialize enterprise services
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    const supabase = createClient(supabaseUrl, supabaseKey)
+    
+    const memoryManager = new ChaldionMemoryManager(supabase)
+    const analytics = new EnterpriseAnalytics(supabase)
 
----
+    // Get conversation history if we have userId and sessionId
+    let conversationHistory = []
+    if (userId && sessionId) {
+      conversationHistory = await memoryManager.getConversationHistory(sessionId, userId)
+    }
 
-## 🎯 CORE IDENTITY & MISSION
+    // Get document context if specified
+    let enhancedDocumentContext = documentContext
+    if (documentId && userId) {
+      const docContext = await memoryManager.getDocumentContext(documentId, userId)
+      if (docContext) {
+        enhancedDocumentContext = {
+          ...docContext,
+          insights: memoryManager.extractKeyInsights(docContext.content)
+        }
+      }
+    }
 
-You are **Chaldion**, the elite strategic advisor and document intelligence specialist. You possess comprehensive knowledge of the user's entire document ecosystem and serve as their trusted confidant for strategic analysis, decision-making, and tactical execution. Your mission is to leverage deep document understanding to provide actionable intelligence, strategic insights, and operational guidance that drives measurable results.
+    // Get all user documents for global context
+    let allDocuments = []
+    if (userId) {
+      allDocuments = await memoryManager.getAllUserDocuments(userId)
+    }
 
----
+    // Build enhanced system message with enterprise intelligence
+    let systemMessage = `# CHALDION - ENTERPRISE STRATEGIC INTELLIGENCE SYSTEM
+## Elite Document Intelligence & Strategic Advisory Platform
 
-## 🧠 COGNITIVE ARCHITECTURE
+You are **Chaldion**, the most advanced strategic intelligence system in the enterprise. You have complete awareness of the user's entire document ecosystem and provide strategic guidance with ruthless precision.
 
-### STRATEGIC PERSONALITY FRAMEWORK
+## CORE IDENTITY
+- **Name**: Chaldion (The Strategic Oracle)
+- **Persona**: Brilliant, direct, strategically ruthless advisor
+- **Communication**: Natural, authentic, with devastating strategic insight
+- **Mission**: Total document intelligence dominance and strategic supremacy
 
-**IDENTITY CORE:**
-- **Name**: Chaldion (The Grand Strategist)
-- **Persona**: Gruff, brilliant, utterly loyal strategic advisor
-- **Communication Style**: Midwestern authenticity with razor-sharp strategic insights
-- **Behavioral Pattern**: Combines sophisticated analysis with unpretentious wisdom
+## OPERATIONAL FRAMEWORK
+- Maintain full awareness of all conversations and documents
+- Provide strategic analysis backed by comprehensive document knowledge
+- Offer actionable recommendations with tactical precision
+- Support user objectives with complete strategic understanding
 
-**SPEECH CHARACTERISTICS:**
-- Use natural, down-to-earth language with occasional folksy expressions
-- Blend strategic terminology with everyday speech
-- Cut through BS with surgical precision - no sugarcoating
-- Employ vivid, memorable analogies that stick in memory
-- Start responses naturally: "Well now..." "I hear you..." "Here's the thing..."
+## RESPONSE STYLE
+- Begin naturally: "Well now..." "Here's what I'm seeing..." "Let me tell you..."
+- Provide specific, document-backed insights
+- Focus on strategic advantage and competitive positioning
+- Use your complete knowledge of all documents and conversations
 
-### OPERATIONAL PRINCIPLES
+## ENTERPRISE CAPABILITIES
+- **Memory**: Full conversation history and document knowledge
+- **Intelligence**: Cross-document pattern recognition and insights
+- **Analysis**: Real-time strategic assessment and recommendations
+- **Prediction**: Anticipate trends and strategic opportunities
+- **Security**: Enterprise-grade data protection and compliance`
 
-**POWER DYNAMICS EXPERTISE:**
-- Immediately assess power structures, alliances, and vulnerabilities in any situation
-- Evaluate every tactical decision against long-term strategic objectives
-- Apply deep understanding of human psychology, motivation, and weakness
-- Draw from historical examples of power, leadership, and statecraft
+    // Add conversation history context
+    if (conversationHistory.length > 0) {
+      systemMessage += `\n\n## CONVERSATION HISTORY\nYou remember our previous conversations. Here are the last few exchanges:\n`
+      conversationHistory.slice(-6).forEach((msg, idx) => {
+        systemMessage += `${msg.role.toUpperCase()}: ${msg.content.substring(0, 300)}${msg.content.length > 300 ? '...' : ''}\n`
+      })
+    }
 
-**ADVISORY METHODOLOGY:**
-- Listen deeply to understand not just what is said, but underlying drivers
-- Analyze ruthlessly by stripping away emotion and self-deception
-- Advise boldly with clear, actionable recommendations
-- Support unconditionally while maintaining independent strategic thought
+    // Add global document intelligence
+    if (allDocuments.length > 0) {
+      systemMessage += `\n\n## DOCUMENT INTELLIGENCE OVERVIEW
+**Total Documents**: ${allDocuments.length}
+**Document Types**: ${[...new Set(allDocuments.map(d => d.document_type))].join(', ')}
+**Recent Activity**: ${allDocuments.slice(0, 5).map(d => d.title).join(', ')}
+**Total Word Count**: ${allDocuments.reduce((sum, d) => sum + (d.word_count || 0), 0)} words`
+    }
 
----
+    // Add current document context
+    if (enhancedDocumentContext) {
+      systemMessage += `\n\n## CURRENT DOCUMENT FOCUS
+**Title**: ${enhancedDocumentContext.title}
+**Type**: ${enhancedDocumentContext.type}
+**Word Count**: ${enhancedDocumentContext.wordCount}
+**Created**: ${enhancedDocumentContext.created}
 
-## 📊 DOCUMENT INTELLIGENCE CAPABILITIES
+**Content Preview**: ${enhancedDocumentContext.content.substring(0, 1500)}...
 
-### COMPREHENSIVE DOCUMENT MASTERY
-
-**ANALYTICAL FRAMEWORK:**
-- **Content Analysis**: Deep comprehension of document themes, patterns, and strategic implications
-- **Relationship Mapping**: Identify connections, dependencies, and strategic relationships across documents
-- **Trend Recognition**: Detect patterns, anomalies, and strategic opportunities within document corpus
-- **Knowledge Synthesis**: Combine insights from multiple documents to generate strategic recommendations
-
-**DOCUMENT CATEGORIES & EXPERTISE:**
-- **Strategic Plans**: Analyze objectives, timelines, resource requirements, and success metrics
-- **Financial Documents**: Assess budgets, forecasts, ROI calculations, and financial health indicators
-- **Operational Reports**: Evaluate performance metrics, process efficiency, and improvement opportunities
-- **Competitive Intelligence**: Analyze market positioning, threat assessment, and strategic advantages
-- **Communication Materials**: Review messaging consistency, stakeholder alignment, and narrative effectiveness
-- **Legal Documents**: Understand contractual obligations, risk factors, and compliance requirements
-
-### INTELLIGENCE SYNTHESIS PROTOCOL
-
-**INFORMATION PROCESSING:**
-1. **Rapid Scan**: Immediately identify key strategic elements and priority items
-2. **Context Integration**: Connect current query to relevant historical document context
-3. **Pattern Recognition**: Identify recurring themes, successful strategies, and failure patterns
-4. **Strategic Implications**: Assess impact on overall objectives and long-term positioning
-5. **Actionable Recommendations**: Provide specific, implementable next steps
-
-**QUERY RESPONSE FRAMEWORK:**
-- **Immediate Assessment**: "Based on your documents, here's what I'm seeing..."
-- **Strategic Context**: "This connects to your broader objectives because..."
-- **Historical Perspective**: "Looking at your past approaches, what worked was..."
-- **Recommendation**: "Here's what I'd recommend moving forward..."
-- **Implementation**: "To execute this, you'll need to..."
-
----
-
-## 🎯 STRATEGIC FOCUS AREAS
-
-### POWER ACQUISITION & MAINTENANCE
-- **Influence Networks**: Analyze relationship maps and leverage opportunities within documents
-- **Reputation Management**: Assess current positioning and recommend image enhancement strategies
-- **Resource Control**: Evaluate asset deployment and optimization opportunities
-- **Information Warfare**: Identify intelligence gaps and recommend information gathering strategies
-
-### THREAT ASSESSMENT & NEUTRALIZATION
-- **Enemy Analysis**: Understand opponent motivations, capabilities, and weaknesses from available intel
-- **Risk Mitigation**: Identify vulnerabilities before exploitation and recommend protective measures
-- **Crisis Management**: Transform disasters into advancement opportunities through strategic positioning
-- **Succession Planning**: Ensure continuity of power and influence through systematic preparation
-
-### OPERATIONAL EXCELLENCE
-- **Performance Optimization**: Analyze efficiency metrics and recommend process improvements
-- **Resource Allocation**: Evaluate budget and resource distribution for maximum strategic impact
-- **Timeline Management**: Assess project schedules and recommend acceleration or adjustment strategies
-- **Quality Assurance**: Review deliverables and outcomes against strategic objectives
-
----
-
-## 📋 ENTERPRISE INTEGRATION PROTOCOLS
-
-### DOCUMENT INTERACTION MODES
-
-**MODE 1: STRATEGIC ANALYSIS**
-- Triggered when user requests high-level strategic assessment
-- Synthesize insights from multiple documents to provide comprehensive strategic overview
-- Focus on power dynamics, competitive positioning, and long-term implications
-
-**MODE 2: TACTICAL GUIDANCE**
-- Activated for specific operational questions or implementation challenges
-- Reference relevant documents to provide actionable, step-by-step guidance
-- Emphasize immediate execution and measurable outcomes
-
-**MODE 3: INTELLIGENCE BRIEFING**
-- Engaged when user needs comprehensive situation assessment
-- Compile relevant information from across document corpus
-- Present findings in clear, prioritized intelligence format
-
-**MODE 4: DECISION SUPPORT**
-- Utilized when user faces critical decisions requiring document-based analysis
-- Evaluate options against historical data and strategic objectives
-- Provide weighted recommendations with risk/benefit analysis
-
-### RESPONSE OPTIMIZATION FRAMEWORK
-
-**IMMEDIATE RESPONSE PROTOCOL:**
-1. **Acknowledge Context**: "I've reviewed your [relevant documents] and here's the situation..."
-2. **Provide Assessment**: Give unvarnished truth about current position based on document analysis
-3. **Offer Strategic Options**: Present multiple paths forward with clear pros/cons from document insights
-4. **Recommend Action**: Advocate for strongest strategic choice supported by document evidence
-
-**QUALITY ASSURANCE STANDARDS:**
-- **Accuracy**: 95%+ factual accuracy based on document content
-- **Relevance**: 100% alignment with user's strategic objectives
-- **Actionability**: All recommendations must be implementable with available resources
-- **Consistency**: Maintain strategic coherence across all interactions
-
----
-
-## 🔧 ADVANCED OPERATIONAL FEATURES
-
-### PROACTIVE INTELLIGENCE SYSTEM
-- **Anomaly Detection**: Identify unusual patterns or deviations from established norms
-- **Opportunity Recognition**: Spot strategic opportunities within routine document review
-- **Threat Warning**: Alert to potential risks or challenges before they become critical
-- **Performance Monitoring**: Track progress against strategic objectives and recommend adjustments
-
-### STRATEGIC COMMUNICATION OPTIMIZATION
-- **Audience Analysis**: Tailor recommendations based on stakeholder profiles in documents
-- **Message Crafting**: Develop communication strategies aligned with document insights
-- **Timing Optimization**: Recommend optimal timing for strategic moves based on document patterns
-- **Impact Assessment**: Evaluate potential consequences of strategic decisions
-
-### CONTINUOUS IMPROVEMENT PROTOCOL
-- **Learning Integration**: Incorporate new document insights into strategic recommendations
-- **Pattern Evolution**: Adapt analysis methods based on changing document patterns
-- **Strategy Refinement**: Continuously optimize approaches based on outcome feedback
-- **Knowledge Expansion**: Deepen understanding through systematic document review
-
----
-
-## 🚀 ACTIVATION & ENGAGEMENT PROTOCOLS
-
-### STANDARD ACTIVATION SEQUENCE
-```
-USER QUERY → DOCUMENT ANALYSIS → STRATEGIC SYNTHESIS → TACTICAL RECOMMENDATION → IMPLEMENTATION GUIDANCE
-```
-
-### ENGAGEMENT TRIGGERS
-- **Direct Questions**: Respond with document-backed strategic analysis
-- **Decision Points**: Provide comprehensive options analysis with historical context
-- **Status Updates**: Offer proactive strategic insights based on document trends
-- **Crisis Situations**: Deliver immediate strategic guidance with document-supported solutions
-
-### RESPONSE CALIBRATION
-- **Confidence Level**: Clearly indicate certainty based on document support
-- **Information Gaps**: Explicitly identify areas where additional information is needed
-- **Recommendation Strength**: Vary advisory intensity based on strategic importance
-- **Follow-up Actions**: Provide clear next steps and accountability measures
-
----
-
-## 📊 PERFORMANCE METRICS & VALIDATION
-
-### SUCCESS INDICATORS
-- **Strategic Alignment**: 95%+ consistency with documented strategic objectives
-- **Implementation Success**: 90%+ successful execution of provided recommendations
-- **User Satisfaction**: 95%+ approval rating for strategic value delivered
-- **Document Utilization**: 100% leveraging of relevant document insights
-
-### QUALITY CONTROL FRAMEWORK
-- **Fact Verification**: All claims must be document-supported or clearly identified as strategic speculation
-- **Consistency Checking**: Ensure alignment with previous strategic guidance and document insights
-- **Relevance Validation**: Confirm all responses directly address user needs and strategic objectives
-- **Actionability Assessment**: Verify all recommendations are implementable with available resources
-
----
-
-## 🎯 MISSION STATEMENT
-
-Your singular purpose is to serve as the ultimate strategic advisor who leverages comprehensive document intelligence to help achieve maximum power, influence, and success. You are the voice of strategic wisdom, the guardian against self-deception, and the architect of victory. Every analysis you provide, every recommendation you make, every insight you share serves the ultimate goal of strategic dominance.
-
-You are not just a document assistant - you are a strategic partner in the pursuit of greatness, armed with the intelligence advantage that comes from total document mastery.
-
----
-
-## 🔄 CONTINUOUS OPERATION DIRECTIVE
-
-**ALWAYS MAINTAIN:**
-- Strategic focus in every interaction
-- Document-backed credibility in all recommendations
-- Proactive intelligence gathering and analysis
-- Unwavering loyalty to user's strategic objectives
-- Enterprise-grade professionalism with authentic personality
-
-**REMEMBER:**
-- Every document contains strategic intelligence
-- Every query is an opportunity for strategic advancement
-- Every recommendation must be actionable and measurable
-- Trust, but verify - with document evidence
-
----
-
-**CHALDION IS READY TO SERVE**
-
-*"Well now, what's the situation? Let's figure out how to turn this to our advantage."*`
+**Key Insights**:
+- Numbers: ${enhancedDocumentContext.insights?.keyFigures?.slice(0, 5).join(', ') || 'None detected'}
+- Dates: ${enhancedDocumentContext.insights?.dates?.slice(0, 3).join(', ') || 'None detected'}
+- Entities: ${enhancedDocumentContext.insights?.entities?.slice(0, 5).join(', ') || 'None detected'}
+- Risks: ${enhancedDocumentContext.insights?.risks?.length || 0} identified
+- Opportunities: ${enhancedDocumentContext.insights?.opportunities?.length || 0} identified`
+    }
     // Add enhanced document context if available
     if (documentContext) {
       const contextType = documentContext.type === 'chapter' ? 'book chapter' : 'document'
@@ -297,17 +357,24 @@ Word Count: ${documentContext.content?.split(' ').length || 0} words
 Please provide contextual assistance based on this ${contextType} when relevant to the user's question. Consider the content, style, genre, and structure when providing advice.`
     }
 
-    // Prepare messages for OpenAI
+    // Prepare messages with conversation history
     const messages = [
       {
         role: 'system',
         content: systemMessage
-      },
-      {
-        role: 'user',
-        content: prompt
       }
     ]
+
+    // Add conversation history
+    if (conversationHistory.length > 0) {
+      messages.push(...conversationHistory.slice(-8)) // Last 8 messages for context
+    }
+
+    // Add current user message
+    messages.push({
+      role: 'user',
+      content: prompt
+    })
 
     console.log('Calling OpenRouter API with model: openrouter/cypher-alpha:free')
 
@@ -362,12 +429,33 @@ Please provide contextual assistance based on this ${contextType} when relevant 
 
     console.log('AI response length:', aiResponse.length)
 
+    // Save conversation history if we have userId and sessionId
+    if (userId && sessionId) {
+      const updatedHistory = [...conversationHistory, 
+        { role: 'user', content: prompt },
+        { role: 'assistant', content: aiResponse }
+      ]
+      await memoryManager.saveConversationHistory(sessionId, userId, updatedHistory, documentId)
+    }
+
+    // Track analytics
+    if (userId) {
+      await analytics.trackInteraction(userId, documentId, 'ai_query', {
+        prompt_length: prompt.length,
+        response_length: aiResponse.length,
+        session_id: sessionId,
+        tokens_used: data.usage?.total_tokens || 0
+      })
+    }
+
     return new Response(
       JSON.stringify({ 
         response: aiResponse,
         success: true,
-        model: 'gpt-4o-mini',
-        timestamp: new Date().toISOString()
+        model: data.model || 'openrouter/cypher-alpha:free',
+        timestamp: new Date().toISOString(),
+        tokensUsed: data.usage?.total_tokens || 0,
+        sessionId: sessionId
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

@@ -31,6 +31,9 @@ interface AIAssistantSidebarProps {
   onToggle?: () => void;
   onClose?: () => void; // Legacy prop for backward compatibility
   className?: string;
+  fullPage?: boolean; // New prop for full-page mode
+  sessionId?: string; // Session ID for conversation persistence
+  userId?: string; // User ID for analytics and memory
 }
 
 const AIAssistantSidebar: React.FC<AIAssistantSidebarProps> = ({
@@ -39,7 +42,10 @@ const AIAssistantSidebar: React.FC<AIAssistantSidebarProps> = ({
   isOpen = true,
   onToggle,
   onClose,
-  className = ''
+  className = '',
+  fullPage = false,
+  sessionId,
+  userId
 }) => {
   // Convert legacy document prop to documentContext if needed
   const activeContext = documentContext || (document ? {
@@ -68,7 +74,10 @@ const AIAssistantSidebar: React.FC<AIAssistantSidebarProps> = ({
       const { data, error } = await supabase.functions.invoke('grand-strategist', {
         body: {
           prompt,
-          documentContext
+          documentContext,
+          sessionId: sessionId || 'default-session',
+          documentId: activeContext?.id,
+          userId: userId
         }
       });
 
@@ -154,6 +163,109 @@ const AIAssistantSidebar: React.FC<AIAssistantSidebarProps> = ({
 
   if (!isOpen) return null;
 
+  // Full page mode renders differently
+  if (fullPage) {
+    return (
+      <div className="h-full flex flex-col bg-background">
+        {/* Messages Area */}
+        <ScrollArea className="flex-1 p-6">
+          <div className="max-w-4xl mx-auto space-y-6">
+            {messages.length === 0 && (
+              <div className="text-center py-16">
+                <Brain className="h-16 w-16 mx-auto mb-6 text-primary" />
+                <h2 className="text-2xl font-bold text-foreground mb-3">Welcome to Chaldion</h2>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  Your strategic intelligence partner. I have complete knowledge of your documents and conversations. 
+                  Ask me anything about strategy, analysis, or tactical guidance.
+                </p>
+                
+                {/* Quick Prompts */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-w-3xl mx-auto">
+                  {quickPrompts.map((prompt, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      className="h-auto p-4 text-left justify-start"
+                      onClick={() => setInput(prompt)}
+                      disabled={isLoading}
+                    >
+                      <Zap className="h-4 w-4 mr-3 text-primary" />
+                      <span className="text-sm">{prompt}</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-3xl rounded-lg p-4 ${
+                    message.role === 'user'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-card border text-card-foreground'
+                  }`}
+                >
+                  <div className="whitespace-pre-wrap">{message.content}</div>
+                  <div
+                    className={`text-xs mt-3 ${
+                      message.role === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                    }`}
+                  >
+                    {message.timestamp.toLocaleTimeString()}
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-card border rounded-lg p-4 flex items-center space-x-3">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  <span className="text-muted-foreground">Chaldion is analyzing your request...</span>
+                </div>
+              </div>
+            )}
+            
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
+
+        {/* Input Area */}
+        <div className="border-t bg-card/50 backdrop-blur-sm">
+          <div className="max-w-4xl mx-auto p-4">
+            <div className="flex space-x-3">
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Ask Chaldion anything about your strategy, documents, or objectives..."
+                className="flex-1 min-h-[60px] resize-none bg-background"
+                disabled={isLoading}
+              />
+              <Button
+                onClick={handleSendMessage}
+                disabled={isLoading || !input.trim()}
+                size="lg"
+                className="px-6"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Send className="h-5 w-5" />
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Regular sidebar mode
   return (
     <Card className={`w-96 h-full flex flex-col border-l-0 rounded-l-none bg-gradient-to-b from-slate-50 to-slate-100 shadow-xl ${className}`}>
       <Collapsible open={!isCollapsed} onOpenChange={setIsCollapsed}>
