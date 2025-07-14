@@ -323,7 +323,7 @@ const Documents = () => {
                           content: doc.content,
                           content_type: doc.content_type as DocType,
                           created_at: doc.created_at,
-                          updated_at: formatDate(doc.updated_at),
+                          updated_at: doc.updated_at,
                           is_template: doc.is_template,
                           metadata: doc.metadata,
                           user_id: doc.user_id,

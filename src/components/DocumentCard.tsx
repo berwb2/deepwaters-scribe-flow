@@ -50,7 +50,7 @@ interface DocumentCardProps {
 }
 
 const DocumentCard = ({ document, onUpdate, contextMenuItems }: DocumentCardProps) => {
-  // Handle both string and Date types for updated_at with proper validation
+  // Handle both string and Date types for dates with proper validation
   const createValidDate = (dateValue: string | Date): Date => {
     if (!dateValue) {
       return new Date(); // Fallback to current date if no date provided
@@ -60,10 +60,15 @@ const DocumentCard = ({ document, onUpdate, contextMenuItems }: DocumentCardProp
     return isValid(date) ? date : new Date(); // Fallback to current date if invalid
   };
 
+  const createdAtDate = createValidDate(document.created_at);
   const updatedAtDate = createValidDate(document.updated_at);
   
-  // Only format if we have a valid date
-  const formattedDate = isValid(updatedAtDate) 
+  // Format dates for display
+  const formattedCreatedDate = isValid(createdAtDate) 
+    ? format(createdAtDate, 'MMM dd, yyyy')
+    : 'Unknown date';
+    
+  const formattedUpdatedDate = isValid(updatedAtDate) 
     ? format(updatedAtDate, 'MMM dd, yyyy')
     : 'Unknown date';
     
@@ -115,11 +120,11 @@ const DocumentCard = ({ document, onUpdate, contextMenuItems }: DocumentCardProp
         <div className="flex justify-between items-center w-full">
           <div className="flex items-center">
             <Calendar className="h-3 w-3 mr-1" />
-            <span>{formattedDate}</span>
+            <span title={`Created: ${formattedCreatedDate}`}>Created {formattedCreatedDate}</span>
           </div>
           <div className="flex items-center">
             <Clock className="h-3 w-3 mr-1" />
-            <span>{timeAgo}</span>
+            <span title={`Updated: ${formattedUpdatedDate}`}>Updated {timeAgo}</span>
           </div>
         </div>
       </CardFooter>
