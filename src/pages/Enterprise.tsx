@@ -5,7 +5,7 @@ import MobileNav from '@/components/MobileNav';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, Search, FileTemplate, ArrowLeft, Home } from 'lucide-react';
+import { BarChart3, Search, FileText, ArrowLeft, Home } from 'lucide-react';
 import AdvancedSearch from '@/components/enterprise/AdvancedSearch';
 import AnalyticsDashboard from '@/components/enterprise/AnalyticsDashboard';
 import TemplateSystem from '@/components/enterprise/TemplateSystem';
@@ -53,7 +53,7 @@ const Enterprise: React.FC = () => {
                 Analytics
               </TabsTrigger>
               <TabsTrigger value="templates" className="flex items-center gap-2">
-                <FileTemplate className="h-4 w-4" />
+                <FileText className="h-4 w-4" />
                 Templates
               </TabsTrigger>
             </TabsList>
