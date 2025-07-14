@@ -353,6 +353,53 @@ export type Database = {
           },
         ]
       }
+      document_analytics: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          document_id: string
+          duration_seconds: number | null
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          document_id: string
+          duration_seconds?: number | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          document_id?: string
+          duration_seconds?: number | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_analytics_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_collections: {
         Row: {
           created_at: string
@@ -446,6 +493,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      document_templates: {
+        Row: {
+          category: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_public: boolean | null
+          name: string
+          template_data: Json
+          updated_at: string | null
+          usage_count: number | null
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name: string
+          template_data?: Json
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          name?: string
+          template_data?: Json
+          updated_at?: string | null
+          usage_count?: number | null
+          user_id?: string
+        }
+        Relationships: []
       }
       document_versions: {
         Row: {
@@ -737,6 +823,66 @@ export type Database = {
           },
         ]
       }
+      saved_searches: {
+        Row: {
+          created_at: string | null
+          filters: Json | null
+          id: string
+          name: string
+          search_query: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          filters?: Json | null
+          id?: string
+          name: string
+          search_query: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          filters?: Json | null
+          id?: string
+          name?: string
+          search_query?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      smart_collections: {
+        Row: {
+          auto_update: boolean | null
+          created_at: string | null
+          description: string | null
+          filter_rules: Json
+          id: string
+          name: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          auto_update?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          filter_rules?: Json
+          id?: string
+          name: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          auto_update?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          filter_rules?: Json
+          id?: string
+          name?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       workspaces: {
         Row: {
           created_at: string | null
@@ -787,6 +933,19 @@ export type Database = {
           created_at: string
           version_number: number
         }[]
+      }
+      is_admin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
+      track_document_analytics: {
+        Args: {
+          p_document_id: string
+          p_action_type: string
+          p_session_id?: string
+          p_metadata?: Json
+        }
+        Returns: string
       }
       update_document: {
         Args: {
