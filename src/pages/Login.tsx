@@ -39,9 +39,11 @@ const Login = () => {
     try {
       await signIn(loginEmail, loginPassword, rememberMe);
       toast.success("Logged in successfully");
-      // Redirect to referrer or documents page
-      const from = location.state?.from?.pathname || "/documents";
-      navigate(from);
+      
+      // Force React Query to refetch user data immediately
+      setTimeout(() => {
+        window.location.href = location.state?.from?.pathname || "/dashboard";
+      }, 100);
     } catch (error) {
       // Error is handled in signIn function
       setIsLoading(false);

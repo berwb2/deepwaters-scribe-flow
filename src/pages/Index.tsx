@@ -44,9 +44,6 @@ const Index = () => {
       <section className="relative bg-gradient-to-b from-background to-blue-50 py-20 md:py-32 overflow-hidden">
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="mb-8">
-              <Logo size="lg" className="mx-auto" />
-            </div>
             <h1 className="mb-6 text-4xl md:text-6xl font-serif leading-tight">
               Welcome to DeepWaters—<br className="hidden sm:block" />
               <span className="text-blue-600">a serene space</span> for planning, reflection, and growth
