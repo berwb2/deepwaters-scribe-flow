@@ -43,20 +43,20 @@ const DashboardWidget = () => {
   ];
 
   return (
-    <div className={`grid gap-3 mb-6 ${isMobile ? 'grid-cols-2' : 'grid-cols-4'}`}>
+    <div className={`grid gap-2 mb-4 ${isMobile ? 'grid-cols-2' : 'grid-cols-4'}`}>
       {quickActions.map((action) => {
         const Icon = action.icon;
         return (
           <Card key={action.to} className="hover:shadow-md transition-all duration-200 hover-scale">
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <Link to={action.to} className="block">
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 ${action.bgColor} rounded-lg`}>
-                    <Icon className={`h-4 w-4 ${action.iconColor}`} />
+                <div className="flex items-center gap-2">
+                  <div className={`p-1.5 ${action.bgColor} rounded-md`}>
+                    <Icon className={`h-3 w-3 ${action.iconColor}`} />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-sm">{action.title}</h3>
-                    <p className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                    <h3 className="font-medium text-xs">{action.title}</h3>
+                    <p className={`text-muted-foreground ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
                       {action.description}
                     </p>
                   </div>
