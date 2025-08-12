@@ -10,7 +10,7 @@ import DocumentRenderer from '@/components/DocumentRenderer';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import DashboardWidget from '@/components/DashboardWidget';
-import { getDocument, updateDocument } from '@/lib/api';
+import { getDocument, updateDocument } from '@/lib/documents';
 import { DOCUMENT_TYPES } from '@/types/documentTypes';
 import { ArrowLeft, Edit, Calendar, Clock, ChevronDown, ChevronUp, Eye, Copy } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
