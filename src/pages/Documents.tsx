@@ -26,6 +26,7 @@ const Documents = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [dateFilter, setDateFilter] = useState<string>('all');
   const isMobile = useIsMobile();
 
   const { data: user } = useQuery({
@@ -35,7 +36,7 @@ const Documents = () => {
 
   // Fetch documents based on selected folder
   const { data: documentsData, isLoading, refetch } = useQuery({
-    queryKey: ['documents', searchQuery, selectedType, selectedFolder, selectedTags, selectedStatus],
+    queryKey: ['documents', searchQuery, selectedType, selectedFolder, selectedTags, selectedStatus, dateFilter],
     queryFn: async () => {
       if (selectedFolder) {
         // Fetch documents from specific folder
@@ -60,6 +61,31 @@ const Documents = () => {
           filters.status = selectedStatus;
         }
 
+        // Add date filtering
+        if (dateFilter !== 'all') {
+          const now = new Date();
+          let startDate: Date;
+          
+          switch (dateFilter) {
+            case 'today':
+              startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+              break;
+            case 'week':
+              startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+              break;
+            case 'month':
+              startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+              break;
+            case 'year':
+              startDate = new Date(now.getFullYear(), 0, 1);
+              break;
+            default:
+              startDate = new Date(0);
+          }
+          
+          filters.dateFrom = startDate.toISOString();
+        }
+
         const response = await listDocuments(filters, { field: 'updated_at', direction: 'desc' }, 1, 100);
         return response;
       }
@@ -71,6 +97,13 @@ const Documents = () => {
   const totalDocuments = documentsData?.total || 0;
   const documentTypes = ['all', 'markdown', 'report', 'conversation', 'note', 'plan'];
   const statusOptions = ['all', 'draft', 'review', 'published', 'archived'];
+  const dateFilterOptions = [
+    { value: 'all', label: 'All Time' },
+    { value: 'today', label: 'Today' },
+    { value: 'week', label: 'This Week' },
+    { value: 'month', label: 'This Month' },
+    { value: 'year', label: 'This Year' }
+  ];
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -248,6 +281,25 @@ const Documents = () => {
                               onClick={() => setSelectedStatus(status)}
                             >
                               {status === 'all' ? 'All Status' : status}
+                            </Badge>
+                          ))}
+                        </div>
+
+                        {/* Date Filter */}
+                        <Separator orientation="vertical" className="h-6" />
+                        <div className="flex gap-2 overflow-x-auto pb-2">
+                          {dateFilterOptions.map(option => (
+                            <Badge
+                              key={option.value}
+                              variant={dateFilter === option.value ? "default" : "outline"}
+                              className={`cursor-pointer whitespace-nowrap ${
+                                dateFilter === option.value 
+                                  ? 'bg-orange-600 text-white' 
+                                  : 'border-orange-200 text-orange-700 hover:bg-orange-50'
+                              }`}
+                              onClick={() => setDateFilter(option.value)}
+                            >
+                              {option.label}
                             </Badge>
                           ))}
                         </div>

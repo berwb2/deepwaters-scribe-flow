@@ -7,6 +7,7 @@ export const listDocuments = async (
     folder_id?: string;
     tags?: string[];
     status?: string;
+    dateFrom?: string;
   } = {},
   sortBy: { field: string; direction: 'asc' | 'desc' } = { field: 'updated_at', direction: 'desc' },
   page: number = 1,
@@ -47,6 +48,11 @@ export const listDocuments = async (
   // Apply search filter separately using or
   if (filters.search) {
     query = query.or(`title.ilike.%${filters.search}%,content.ilike.%${filters.search}%`);
+  }
+
+  // Apply date filter
+  if (filters.dateFrom) {
+    query = query.gte('created_at', filters.dateFrom);
   }
 
   // Execute the query

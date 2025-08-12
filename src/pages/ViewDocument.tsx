@@ -12,7 +12,7 @@ import Sidebar from '@/components/Sidebar';
 import DashboardWidget from '@/components/DashboardWidget';
 import { getDocument, updateDocument } from '@/lib/api';
 import { DOCUMENT_TYPES } from '@/types/documentTypes';
-import { ArrowLeft, Edit, Calendar, Clock, ChevronDown, ChevronUp, Eye } from 'lucide-react';
+import { ArrowLeft, Edit, Calendar, Clock, ChevronDown, ChevronUp, Eye, Copy } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -57,14 +57,13 @@ const ViewDocument = () => {
     
     try {
       setIsSaving(true);
-      await updateDocument(id, { 
+      const updatedDoc = await updateDocument(id, { 
         title: title.trim(),
         content: content 
       });
       
-      // Reload document to get updated data
-      await loadDocument();
-      
+      // Update local state with the returned data
+      setDocument(updatedDoc);
       setIsEditing(false);
       toast.success('Document saved successfully');
     } catch (error) {
@@ -72,6 +71,18 @@ const ViewDocument = () => {
       toast.error('Failed to save document');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleCopyContent = async () => {
+    try {
+      // Strip HTML tags for plain text copy
+      const plainText = content.replace(/<[^>]*>/g, '');
+      await navigator.clipboard.writeText(plainText);
+      toast.success('Document content copied to clipboard');
+    } catch (error) {
+      console.error('Error copying content:', error);
+      toast.error('Failed to copy content');
     }
   };
 
@@ -240,6 +251,16 @@ const ViewDocument = () => {
                         </div>
                         
                         <div className="flex items-center space-x-2">
+                          {!isEditing && (
+                            <Button
+                              size="sm"
+                              onClick={handleCopyContent}
+                              className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                            >
+                              <Copy className="mr-2 h-4 w-4" />
+                              Copy
+                            </Button>
+                          )}
                           {isEditing ? (
                             <div className="flex items-center space-x-2">
                               <Button
