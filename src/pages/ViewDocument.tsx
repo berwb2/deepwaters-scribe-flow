@@ -108,24 +108,47 @@ const ViewDocument = () => {
     const doc = parser.parseFromString(content, 'text/html');
     const headings = doc.querySelectorAll('h1, h2, h3, h4, h5, h6');
     
-    return Array.from(headings).map((heading, index) => ({
-      id: `heading-${index}`,
-      text: heading.textContent || '',
-      level: parseInt(heading.tagName[1]),
-      element: heading
-    }));
+    return Array.from(headings).map((heading, index) => {
+      const text = heading.textContent || '';
+      const id = `heading-${index}-${text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
+      return {
+        id,
+        text,
+        level: parseInt(heading.tagName[1]),
+        element: heading
+      };
+    });
   };
 
-  const scrollToHeading = (text: string) => {
-    const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
-    const targetHeading = Array.from(headings).find(h => {
-      const element = h as HTMLElement;
-      return element.textContent === text;
-    });
+  const scrollToHeading = (headingId: string) => {
+    // First try to find by the generated ID
+    let targetElement = document.getElementById(headingId);
     
-    if (targetHeading) {
-      const element = targetHeading as HTMLElement;
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // If not found by ID, try to find by text content
+    if (!targetElement) {
+      const tableOfContents = generateTableOfContents();
+      const tocItem = tableOfContents.find(item => item.id === headingId);
+      if (tocItem) {
+        const headings = document.querySelectorAll('.luxury-document-content h1, .luxury-document-content h2, .luxury-document-content h3, .luxury-document-content h4, .luxury-document-content h5, .luxury-document-content h6');
+        targetElement = Array.from(headings).find(h => {
+          const element = h as HTMLElement;
+          return element.textContent?.trim() === tocItem.text.trim();
+        }) as HTMLElement;
+      }
+    }
+    
+    if (targetElement) {
+      targetElement.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start',
+        inline: 'nearest'
+      });
+      // Add a visual highlight effect
+      targetElement.style.transition = 'background-color 0.3s ease';
+      targetElement.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+      setTimeout(() => {
+        targetElement.style.backgroundColor = '';
+      }, 2000);
     }
   };
 
@@ -249,7 +272,7 @@ const ViewDocument = () => {
                             {tableOfContents.map((item, index) => (
                               <button
                                 key={index}
-                                onClick={() => scrollToHeading(item.text)}
+                                onClick={() => scrollToHeading(item.id)}
                                 className={`block text-left text-sm hover:text-blue-600 transition-all duration-200 w-full rounded-md p-2 hover:bg-blue-50 ${
                                   item.level === 1 ? 'font-semibold text-blue-900 text-base' :
                                   item.level === 2 ? 'ml-3 font-medium text-blue-800' :

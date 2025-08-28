@@ -32,6 +32,19 @@ const DocumentRenderer: React.FC<DocumentRendererProps> = ({
   // Process HTML content to enhance formatting with DeepWaters blue-themed styling
   let processedContent = document.content as string;
   if (typeof processedContent === 'string') {
+    // Add IDs to headings for navigation
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(processedContent, 'text/html');
+    const headings = doc.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    
+    headings.forEach((heading, index) => {
+      const text = heading.textContent || '';
+      const id = `heading-${index}-${text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
+      heading.setAttribute('id', id);
+    });
+    
+    processedContent = doc.body.innerHTML;
+    
     // Enhanced heading styles with blue theme
     processedContent = processedContent
       .replace(/<h1([^>]*)>/g, '<h1$1 class="luxury-heading-1">')
