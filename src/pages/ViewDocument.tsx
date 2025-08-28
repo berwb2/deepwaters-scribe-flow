@@ -10,11 +10,12 @@ import DocumentRenderer from '@/components/DocumentRenderer';
 import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import DashboardWidget from '@/components/DashboardWidget';
-import { getDocument, updateDocument } from '@/lib/documents';
+import { getDocument, updateDocument, listDocuments } from '@/lib/documents';
 import { DOCUMENT_TYPES } from '@/types/documentTypes';
-import { ArrowLeft, Edit, Calendar, Clock, ChevronDown, ChevronUp, Eye, Copy } from 'lucide-react';
+import { ArrowLeft, Edit, Calendar, Clock, ChevronDown, ChevronUp, Eye, Copy, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useSwipeNavigation } from '@/hooks/use-swipe-navigation';
 
 const ViewDocument = () => {
   const { id } = useParams();
@@ -27,10 +28,13 @@ const ViewDocument = () => {
   const [content, setContent] = useState('');
   const [title, setTitle] = useState('');
   const [tocOpen, setTocOpen] = useState(!isMobile);
+  const [allDocuments, setAllDocuments] = useState<any[]>([]);
+  const [currentDocumentIndex, setCurrentDocumentIndex] = useState(-1);
 
   useEffect(() => {
     if (id) {
       loadDocument();
+      loadAllDocuments();
     }
   }, [id]);
 
@@ -49,6 +53,17 @@ const ViewDocument = () => {
       navigate('/documents');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadAllDocuments = async () => {
+    try {
+      const { documents } = await listDocuments({}, { field: 'updated_at', direction: 'desc' }, 1, 1000);
+      setAllDocuments(documents);
+      const currentIndex = documents.findIndex(doc => doc.id === id);
+      setCurrentDocumentIndex(currentIndex);
+    } catch (error) {
+      console.error('Error loading documents list:', error);
     }
   };
 
@@ -114,6 +129,28 @@ const ViewDocument = () => {
     }
   };
 
+  const navigateToNextDocument = () => {
+    if (currentDocumentIndex >= 0 && currentDocumentIndex < allDocuments.length - 1) {
+      const nextDoc = allDocuments[currentDocumentIndex + 1];
+      navigate(`/documents/${nextDoc.id}`);
+      toast.success(`Navigated to: ${nextDoc.title}`);
+    }
+  };
+
+  const navigateToPreviousDocument = () => {
+    if (currentDocumentIndex > 0) {
+      const prevDoc = allDocuments[currentDocumentIndex - 1];
+      navigate(`/documents/${prevDoc.id}`);
+      toast.success(`Navigated to: ${prevDoc.title}`);
+    }
+  };
+
+  const swipeRef = useSwipeNavigation({
+    onSwipeLeft: navigateToNextDocument,
+    onSwipeRight: navigateToPreviousDocument,
+    threshold: 100
+  });
+
   const tableOfContents = generateTableOfContents();
 
   if (isLoading) {
@@ -162,6 +199,9 @@ const ViewDocument = () => {
 
   const documentType = DOCUMENT_TYPES.find(type => type.id === document.content_type) || DOCUMENT_TYPES[0];
   const wordCount = content.replace(/<[^>]*>/g, '').split(/\s+/).filter(word => word.length > 0).length;
+
+  const hasPreviousDocument = currentDocumentIndex > 0;
+  const hasNextDocument = currentDocumentIndex >= 0 && currentDocumentIndex < allDocuments.length - 1;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-50">
@@ -230,10 +270,22 @@ const ViewDocument = () => {
 
               {/* Main Content */}
               <div className={`${tableOfContents.length > 0 ? 'lg:col-span-9' : 'lg:col-span-12'}`}>
-                <Card className="border-blue-200 shadow-xl bg-white/95 backdrop-blur-sm">
+                <Card ref={swipeRef} className="border-blue-200 shadow-xl bg-white/95 backdrop-blur-sm">
                   <CardHeader className="bg-gradient-to-r from-blue-600 to-teal-600 text-white">
                     <div className="flex flex-col space-y-4">
                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                        {/* Navigation arrows for larger screens */}
+                        <div className="hidden sm:flex items-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={navigateToPreviousDocument}
+                            disabled={!hasPreviousDocument}
+                            className="text-white/70 hover:text-white hover:bg-white/20 mr-2"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                        </div>
                         <div className="flex-1 min-w-0">
                           {isEditing ? (
                             <input
@@ -251,6 +303,19 @@ const ViewDocument = () => {
                         </div>
                         
                         <div className="flex items-center space-x-2">
+                          {/* Navigation arrows for larger screens */}
+                          <div className="hidden sm:flex items-center mr-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={navigateToNextDocument}
+                              disabled={!hasNextDocument}
+                              className="text-white/70 hover:text-white hover:bg-white/20"
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          
                           {!isEditing && (
                             <Button
                               size="sm"
@@ -302,6 +367,14 @@ const ViewDocument = () => {
                         <Badge variant="secondary" className={`${documentType.color} bg-white/20 text-white border-white/30`}>
                           {documentType.name}
                         </Badge>
+                        
+                        {/* Mobile navigation indicator */}
+                        {isMobile && allDocuments.length > 1 && (
+                          <div className="flex items-center text-white/90 text-xs">
+                            <span>{currentDocumentIndex + 1} of {allDocuments.length}</span>
+                            <span className="ml-2 text-white/60">Swipe to navigate</span>
+                          </div>
+                        )}
                         
                         <div className="flex items-center text-white/90">
                           <Calendar className="mr-1 h-3 w-3" />
