@@ -12,10 +12,11 @@ import Sidebar from '@/components/Sidebar';
 import DashboardWidget from '@/components/DashboardWidget';
 import { getDocument, updateDocument, listDocuments } from '@/lib/documents';
 import { DOCUMENT_TYPES } from '@/types/documentTypes';
-import { ArrowLeft, Edit, Calendar, Clock, ChevronDown, ChevronUp, Eye, Copy, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Edit, Calendar, Clock, ChevronDown, ChevronUp, Eye, Copy, ChevronLeft, ChevronRight, Save, Bookmark, BookOpen } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSwipeNavigation } from '@/hooks/use-swipe-navigation';
+import { Progress } from '@/components/ui/progress';
 
 const ViewDocument = () => {
   const { id } = useParams();
@@ -30,6 +31,9 @@ const ViewDocument = () => {
   const [tocOpen, setTocOpen] = useState(!isMobile);
   const [allDocuments, setAllDocuments] = useState<any[]>([]);
   const [currentDocumentIndex, setCurrentDocumentIndex] = useState(-1);
+  const [readingProgress, setReadingProgress] = useState(0);
+  const [autoSaveTimeout, setAutoSaveTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -37,6 +41,97 @@ const ViewDocument = () => {
       loadAllDocuments();
     }
   }, [id]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case 's':
+            e.preventDefault();
+            if (isEditing && hasUnsavedChanges) {
+              handleSave();
+            }
+            break;
+          case 'e':
+            e.preventDefault();
+            if (!isEditing) {
+              setIsEditing(true);
+            }
+            break;
+          case 'Escape':
+            if (isEditing) {
+              setIsEditing(false);
+            }
+            break;
+        }
+      }
+      // Navigation shortcuts
+      if (e.altKey) {
+        switch (e.key) {
+          case 'ArrowLeft':
+            e.preventDefault();
+            navigateToPreviousDocument();
+            break;
+          case 'ArrowRight':
+            e.preventDefault();
+            navigateToNextDocument();
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isEditing, hasUnsavedChanges, currentDocumentIndex]);
+
+  // Reading progress tracking
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      setReadingProgress(Math.min(100, Math.max(0, progress)));
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Auto-save functionality
+  useEffect(() => {
+    if (isEditing && (content !== document?.content || title !== document?.title)) {
+      setHasUnsavedChanges(true);
+      
+      if (autoSaveTimeout) {
+        clearTimeout(autoSaveTimeout);
+      }
+      
+      const timeout = setTimeout(async () => {
+        await handleAutoSave();
+      }, 3000); // Auto-save after 3 seconds of inactivity
+      
+      setAutoSaveTimeout(timeout);
+    }
+    
+    return () => {
+      if (autoSaveTimeout) {
+        clearTimeout(autoSaveTimeout);
+      }
+    };
+  }, [content, title, isEditing]);
+
+  const handleAutoSave = async () => {
+    if (!document || !hasUnsavedChanges) return;
+    
+    try {
+      await updateDocument(document.id, { content, title });
+      setHasUnsavedChanges(false);
+      toast.success('Document auto-saved', { duration: 2000 });
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+    }
+  };
 
   const loadDocument = async () => {
     if (!id) return;
@@ -229,6 +324,35 @@ const ViewDocument = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-50">
       <Navbar />
+      
+      {/* Reading Progress Bar */}
+      <div className="fixed top-0 left-0 w-full h-1 bg-gray-200 z-50">
+        <div 
+          className="h-full bg-gradient-to-r from-blue-600 to-teal-600 transition-all duration-300 ease-out"
+          style={{ width: `${readingProgress}%` }}
+        />
+      </div>
+
+      {/* Unsaved Changes Indicator */}
+      {hasUnsavedChanges && (
+        <div className="fixed top-4 right-4 z-40">
+          <div className="bg-amber-100 border border-amber-300 text-amber-800 px-3 py-2 rounded-lg shadow-sm flex items-center text-sm">
+            <Save className="h-4 w-4 mr-2" />
+            Unsaved changes
+          </div>
+        </div>
+      )}
+
+      {/* Keyboard Shortcuts Help */}
+      <div className="fixed bottom-4 right-4 z-40">
+        <div className="bg-white/90 backdrop-blur-sm border border-gray-200 text-gray-700 px-3 py-2 rounded-lg shadow-sm text-xs">
+          <div className="flex items-center space-x-4">
+            <span>Ctrl+E: Edit</span>
+            <span>Ctrl+S: Save</span>
+            <span>Alt+←→: Navigate</span>
+          </div>
+        </div>
+      </div>
       
       <div className="flex">
         {!isMobile && <Sidebar />}
