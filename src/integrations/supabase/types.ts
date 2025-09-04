@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -612,10 +612,13 @@ export type Database = {
           document_type: string | null
           id: string
           is_deleted: boolean | null
+          is_public: boolean | null
           is_template: boolean | null
           metadata: Json | null
           parent_id: string | null
           search_vector: unknown | null
+          share_token: string | null
+          shared_at: string | null
           title: string
           updated_at: string
           user_id: string
@@ -630,10 +633,13 @@ export type Database = {
           document_type?: string | null
           id?: string
           is_deleted?: boolean | null
+          is_public?: boolean | null
           is_template?: boolean | null
           metadata?: Json | null
           parent_id?: string | null
           search_vector?: unknown | null
+          share_token?: string | null
+          shared_at?: string | null
           title: string
           updated_at?: string
           user_id: string
@@ -648,10 +654,13 @@ export type Database = {
           document_type?: string | null
           id?: string
           is_deleted?: boolean | null
+          is_public?: boolean | null
           is_template?: boolean | null
           metadata?: Json | null
           parent_id?: string | null
           search_vector?: unknown | null
+          share_token?: string | null
+          shared_at?: string | null
           title?: string
           updated_at?: string
           user_id?: string
@@ -1000,20 +1009,20 @@ export type Database = {
     Functions: {
       create_document: {
         Args: {
-          p_title: string
           p_content: string
           p_content_type: string
           p_is_template?: boolean
           p_metadata?: Json
+          p_title: string
         }
         Returns: string
       }
       get_document_versions: {
         Args: { p_document_id: string }
         Returns: {
-          id: string
           content: string
           created_at: string
+          id: string
           version_number: number
         }[]
       }
@@ -1021,23 +1030,27 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
+      toggle_document_sharing: {
+        Args: { doc_id: string; make_public?: boolean }
+        Returns: Json
+      }
       track_document_analytics: {
         Args: {
-          p_document_id: string
           p_action_type: string
-          p_session_id?: string
+          p_document_id: string
           p_metadata?: Json
+          p_session_id?: string
         }
         Returns: string
       }
       update_document: {
         Args: {
-          p_document_id: string
-          p_title?: string
           p_content?: string
           p_content_type?: string
+          p_document_id: string
           p_is_template?: boolean
           p_metadata?: Json
+          p_title?: string
         }
         Returns: undefined
       }
