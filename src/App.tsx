@@ -8,21 +8,23 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider } from './contexts/AuthContext';
 import { SoundProvider, useSound } from './contexts/SoundContext';
 
-import Index from './pages/Index';
-import Login from './pages/Login';
-import ResetPassword from './pages/ResetPassword';
-import Documents from './pages/Documents';
-import CreateDocument from './pages/CreateDocument';
-import ViewDocument from './pages/ViewDocument';
-import AccountSettings from './pages/AccountSettings';
-import Dashboard from './pages/Dashboard';
-import NotFound from './pages/NotFound';
-import Folders from './pages/Folders';
-import FolderView from './pages/FolderView';
-import Calendar from './pages/Calendar';
-import Books from './pages/Books';
-import BookWriter from './pages/BookWriter';
-import GrandStrategist from './pages/GrandStrategist';
+import Dashboard from '@/pages/Dashboard';
+import Documents from '@/pages/Documents';
+import ViewDocument from '@/pages/ViewDocument';
+import SharedDocument from '@/pages/SharedDocument';
+import Folders from '@/pages/Folders';
+import FolderView from '@/pages/FolderView';
+import CreateDocument from '@/pages/CreateDocument';
+import Books from '@/pages/Books';
+import BookWriter from '@/pages/BookWriter';
+import Login from '@/pages/Login';
+import ResetPassword from '@/pages/ResetPassword';
+import AccountSettings from '@/pages/AccountSettings';
+import Calendar from '@/pages/Calendar';
+import Enterprise from '@/pages/Enterprise';
+import GrandStrategist from '@/pages/GrandStrategist';
+import NotFound from '@/pages/NotFound';
+import Index from '@/pages/Index';
 
 // Component that plays the welcome sound
 function AppWithSound() {
@@ -39,6 +41,7 @@ function AppWithSound() {
         <Route path="/" element={<Index />} />
         <Route path="/login" element={<Login />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/shared/:shareToken" element={<SharedDocument />} />
         <Route path="/documents" element={<Documents />} />
         <Route path="/create" element={<CreateDocument />} />
         <Route path="/documents/:id" element={<ViewDocument />} />

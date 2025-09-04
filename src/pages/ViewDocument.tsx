@@ -11,8 +11,9 @@ import Navbar from '@/components/Navbar';
 import Sidebar from '@/components/Sidebar';
 import DashboardWidget from '@/components/DashboardWidget';
 import { getDocument, updateDocument, listDocuments } from '@/lib/documents';
+import { DocumentShareDialog } from '@/components/DocumentShareDialog';
 import { DOCUMENT_TYPES } from '@/types/documentTypes';
-import { ArrowLeft, Edit, Calendar, Clock, ChevronDown, ChevronUp, Eye, Copy, ChevronLeft, ChevronRight, Save, Bookmark, BookOpen } from 'lucide-react';
+import { ArrowLeft, Edit, Calendar, Clock, ChevronDown, ChevronUp, Eye, Copy, ChevronLeft, ChevronRight, Save, Bookmark, BookOpen, Share2 } from 'lucide-react';
 import { toast } from '@/components/ui/sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSwipeNavigation } from '@/hooks/use-swipe-navigation';
@@ -34,6 +35,7 @@ const ViewDocument = () => {
   const [readingProgress, setReadingProgress] = useState(0);
   const [autoSaveTimeout, setAutoSaveTimeout] = useState<NodeJS.Timeout | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -193,6 +195,17 @@ const ViewDocument = () => {
     } catch (error) {
       console.error('Error copying content:', error);
       toast.error('Failed to copy content');
+    }
+  };
+
+  const handleShareUpdate = (updates: { is_public: boolean; share_token?: string; shared_at?: string }) => {
+    if (document) {
+      setDocument({
+        ...document,
+        is_public: updates.is_public,
+        share_token: updates.share_token,
+        shared_at: updates.shared_at
+      });
     }
   };
 
@@ -464,14 +477,24 @@ const ViewDocument = () => {
                           </div>
                           
                           {!isEditing && (
-                            <Button
-                              size="sm"
-                              onClick={handleCopyContent}
-                              className="bg-white/20 hover:bg-white/30 text-white border-white/30"
-                            >
-                              <Copy className="mr-2 h-4 w-4" />
-                              Copy
-                            </Button>
+                            <>
+                              <Button
+                                size="sm"
+                                onClick={() => setShareDialogOpen(true)}
+                                className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                              >
+                                <Share2 className="mr-2 h-4 w-4" />
+                                Share
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={handleCopyContent}
+                                className="bg-white/20 hover:bg-white/30 text-white border-white/30"
+                              >
+                                <Copy className="mr-2 h-4 w-4" />
+                                Copy
+                              </Button>
+                            </>
                           )}
                           {isEditing ? (
                             <div className="flex items-center space-x-2">
@@ -569,6 +592,16 @@ const ViewDocument = () => {
           </div>
         </main>
       </div>
+
+      {/* Share Dialog */}
+      {document && (
+        <DocumentShareDialog
+          open={shareDialogOpen}
+          onOpenChange={setShareDialogOpen}
+          document={document}
+          onUpdate={handleShareUpdate}
+        />
+      )}
     </div>
   );
 };

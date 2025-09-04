@@ -204,3 +204,33 @@ export const searchDocuments = async (query: string) => {
     content_type: 'document'
   })) || [];
 };
+
+export const getSharedDocument = async (shareToken: string) => {
+  const { data, error } = await supabase
+    .from('documents')
+    .select('*')
+    .eq('share_token', shareToken)
+    .eq('is_public', true)
+    .single();
+
+  if (error) {
+    console.error('Error fetching shared document:', error);
+    throw error;
+  }
+
+  return { ...data, tags: [] };
+};
+
+export const toggleDocumentSharing = async (documentId: string, makePublic: boolean = true) => {
+  const { data, error } = await supabase.rpc('toggle_document_sharing', {
+    doc_id: documentId,
+    make_public: makePublic
+  });
+
+  if (error) {
+    console.error('Error toggling document sharing:', error);
+    throw error;
+  }
+
+  return data;
+};
