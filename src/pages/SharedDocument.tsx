@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { getSharedDocument } from '@/lib/documents';
+import { getUserDocumentPermission, copyDocumentToWorkspace } from '@/lib/sharing';
 import DocumentRenderer from '@/components/DocumentRenderer';
-import TableOfContents from '@/components/TableOfContents';
+import DocumentComments from '@/components/DocumentComments';
+import ShareDocumentAdvanced from '@/components/ShareDocumentAdvanced';
 import { DocType } from '@/types/documents';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   AlertCircle, 
@@ -18,9 +22,13 @@ import {
   Eye,
   ChevronDown,
   ChevronUp,
-  Share2
+  Share2,
+  Download,
+  MessageCircle,
+  Users
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from 'sonner';
 
 interface DocumentData {
   id: string;
@@ -33,15 +41,21 @@ interface DocumentData {
   is_template?: boolean;
   metadata?: any;
   user_id?: string;
+  is_public?: boolean;
+  share_token?: string;
 }
 
 export default function SharedDocument() {
   const { shareToken } = useParams<{ shareToken: string }>();
+  const { user } = useAuth();
   const [document, setDocument] = useState<DocumentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [tocOpen, setTocOpen] = useState(true);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [userPermission, setUserPermission] = useState<string>('view');
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('document');
 
   useEffect(() => {
     const fetchSharedDocument = async () => {
@@ -54,6 +68,16 @@ export default function SharedDocument() {
       try {
         const doc = await getSharedDocument(shareToken);
         setDocument(doc);
+        
+        // Check user permission if logged in
+        if (user && doc.id) {
+          try {
+            const permission = await getUserDocumentPermission(doc.id);
+            setUserPermission(permission);
+          } catch (permError) {
+            console.warn('Could not check user permission:', permError);
+          }
+        }
       } catch (err: any) {
         console.error('Error loading shared document:', err);
         setError(err.message || 'Failed to load document');
@@ -63,7 +87,7 @@ export default function SharedDocument() {
     };
 
     fetchSharedDocument();
-  }, [shareToken]);
+  }, [shareToken, user]);
 
   // Reading progress tracking
   useEffect(() => {
@@ -123,6 +147,18 @@ export default function SharedDocument() {
       setTimeout(() => {
         targetElement.style.backgroundColor = '';
       }, 2000);
+    }
+  };
+
+  const handleCopyToWorkspace = async () => {
+    if (!document?.id || !user) return;
+    
+    try {
+      await copyDocumentToWorkspace(document.id);
+      toast.success('Document copied to your workspace!');
+    } catch (error) {
+      console.error('Error copying document:', error);
+      toast.error('Failed to copy document');
     }
   };
 
@@ -229,6 +265,26 @@ export default function SharedDocument() {
                     <Share2 className="h-3 w-3" />
                     Shared
                   </Badge>
+                  {user && userPermission !== 'owner' && userPermission !== 'none' && (
+                    <Button 
+                      size="sm"
+                      onClick={handleCopyToWorkspace}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Copy to Workspace
+                    </Button>
+                  )}
+                  {userPermission === 'owner' && (
+                    <Button 
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShareDialogOpen(true)}
+                    >
+                      <Users className="h-4 w-4 mr-2" />
+                      Manage Sharing
+                    </Button>
+                  )}
                 </div>
               </div>
               
@@ -302,27 +358,70 @@ export default function SharedDocument() {
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Tabs */}
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <TabsList className="bg-white/10 border border-white/20">
+                      <TabsTrigger value="document" className="text-white data-[state=active]:bg-white/20 data-[state=active]:text-white">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Document
+                      </TabsTrigger>
+                      {(user && (userPermission === 'owner' || userPermission === 'edit' || userPermission === 'comment' || document.is_public)) && (
+                        <TabsTrigger value="comments" className="text-white data-[state=active]:bg-white/20 data-[state=active]:text-white">
+                          <MessageCircle className="h-4 w-4 mr-2" />
+                          Comments
+                        </TabsTrigger>
+                      )}
+                    </TabsList>
+                  </Tabs>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="p-8">
-                  <DocumentRenderer 
-                    document={{ 
-                      ...document,
-                      content: document.content,
-                      content_type: document.content_type as DocType,
-                      is_template: document.is_template || false,
-                      metadata: document.metadata || {},
-                      user_id: document.user_id || ''
-                    }} 
-                    className="min-h-96 luxury-document-content"
-                  />
-                </div>
+                <Tabs value={activeTab} className="w-full">
+                  <TabsContent value="document" className="m-0">
+                    <div className="p-8">
+                      <DocumentRenderer 
+                        document={{ 
+                          ...document,
+                          content: document.content,
+                          content_type: document.content_type as DocType,
+                          is_template: document.is_template || false,
+                          metadata: document.metadata || {},
+                          user_id: document.user_id || ''
+                        }} 
+                        className="min-h-96 luxury-document-content"
+                      />
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="comments" className="m-0">
+                    <div className="p-8">
+                      <DocumentComments 
+                        documentId={document.id}
+                        canComment={user && (userPermission === 'owner' || userPermission === 'edit' || userPermission === 'comment' || document.is_public)}
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
+      
+      {/* Share Management Dialog */}
+      {document && userPermission === 'owner' && (
+        <ShareDocumentAdvanced
+          documentId={document.id}
+          isOpen={shareDialogOpen}
+          onClose={() => setShareDialogOpen(false)}
+          document={{
+            title: document.title,
+            is_public: document.is_public || false,
+            share_token: document.share_token
+          }}
+        />
+      )}
     </div>
   );
 }

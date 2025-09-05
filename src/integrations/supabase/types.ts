@@ -438,6 +438,50 @@ export type Database = {
           },
         ]
       }
+      document_changes: {
+        Row: {
+          change_data: Json
+          change_type: string
+          content_after: string | null
+          content_before: string | null
+          created_at: string
+          document_id: string
+          id: string
+          position: number | null
+          user_id: string
+        }
+        Insert: {
+          change_data?: Json
+          change_type: string
+          content_after?: string | null
+          content_before?: string | null
+          created_at?: string
+          document_id: string
+          id?: string
+          position?: number | null
+          user_id: string
+        }
+        Update: {
+          change_data?: Json
+          change_type?: string
+          content_after?: string | null
+          content_before?: string | null
+          created_at?: string
+          document_id?: string
+          id?: string
+          position?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_changes_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_collections: {
         Row: {
           created_at: string
@@ -461,6 +505,63 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      document_comments: {
+        Row: {
+          content: string
+          created_at: string
+          document_id: string
+          highlighted_text: string | null
+          id: string
+          is_resolved: boolean | null
+          parent_comment_id: string | null
+          position_end: number | null
+          position_start: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          document_id: string
+          highlighted_text?: string | null
+          id?: string
+          is_resolved?: boolean | null
+          parent_comment_id?: string | null
+          position_end?: number | null
+          position_start?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          document_id?: string
+          highlighted_text?: string | null
+          id?: string
+          is_resolved?: boolean | null
+          parent_comment_id?: string | null
+          position_end?: number | null
+          position_start?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_comments_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_comments_parent_comment_id_fkey"
+            columns: ["parent_comment_id"]
+            isOneToOne: false
+            referencedRelation: "document_comments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       document_folders: {
         Row: {
@@ -502,6 +603,41 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "document_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_shares: {
+        Row: {
+          created_at: string
+          document_id: string
+          id: string
+          permission_level: string
+          shared_by: string
+          shared_with: string
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          id?: string
+          permission_level?: string
+          shared_by: string
+          shared_with: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          id?: string
+          permission_level?: string
+          shared_by?: string
+          shared_with?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_shares_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
             referencedColumns: ["id"]
           },
         ]
@@ -808,6 +944,41 @@ export type Database = {
           },
         ]
       }
+      folder_shares: {
+        Row: {
+          created_at: string
+          folder_id: string
+          id: string
+          permission_level: string
+          shared_by: string
+          shared_with: string
+        }
+        Insert: {
+          created_at?: string
+          folder_id: string
+          id?: string
+          permission_level?: string
+          shared_by: string
+          shared_with: string
+        }
+        Update: {
+          created_at?: string
+          folder_id?: string
+          id?: string
+          permission_level?: string
+          shared_by?: string
+          shared_with?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folder_shares_folder_id_fkey"
+            columns: ["folder_id"]
+            isOneToOne: false
+            referencedRelation: "document_folders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           content: string
@@ -1007,6 +1178,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      copy_document_to_workspace: {
+        Args: { p_document_id: string }
+        Returns: string
+      }
       create_document: {
         Args: {
           p_content: string
@@ -1025,6 +1200,10 @@ export type Database = {
           id: string
           version_number: number
         }[]
+      }
+      get_user_document_permission: {
+        Args: { p_document_id: string; p_user_id?: string }
+        Returns: string
       }
       is_admin: {
         Args: { user_id: string }
